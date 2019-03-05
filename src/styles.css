@@ -1,0 +1,42 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #e6e6e6;
+}
+
+.diagramContainer {
+  overflow: auto;
+  position: relative;
+  border: 1px solid red;
+}
+
+.vertex {
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  word-break: break-all;
+}
+
+.full-height{
+  height: 100%;
+}
+
+.spr {
+  position: relative;
+}
+
+body,
+h1,
+h2 {
+  margin: 0;
+}
+
+*{
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
