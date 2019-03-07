@@ -1,110 +1,213 @@
-import React from "react";
-import { jsPlumb } from "jsplumb";
-import Node from "./Node";
-import { keyBy } from "lodash";
+import React from 'react';
+import memoizeOne from 'memoize-one';
+import _throttle from 'lodash/throttle';
 
-function getConnectionsUpdateItem(prevConnections, nextConnections) {
-  const prevMap = new Map(prevConnections.map(i => [i.id, i]));
-  const nextMap = new Map(nextConnections.map(i => [i.id, i]));
-  const connectionsAdded = [];
-  const connectionsRemoved = [];
 
-  prevMap.forEach((value, id) => {
-    if (!nextMap.has(id)) {
-      connectionsRemoved.push(value);
-    }
+import createIntervalTree from './lib/intervalTree';
+import Edges from './Edges';
+
+const MARGIN = 100;
+
+const CONTAINER_HEIGHT = window.innerHeight;
+const CONTAINER_WIDTH = window.innerWidth;
+
+const getExtremeVertices = memoizeOne((vertices) => {
+ return vertices.reduce((res, vertex) => {
+  if (res.rightMostVertex.left < vertex.left) {
+   res.rightMostVertex = vertex;
+  }
+
+  if (res.bottomMostVertex.top < vertex.top) {
+   res.bottomMostVertex = vertex;
+  }
+
+  return res;
+ }, { rightMostVertex: { left: -1 }, bottomMostVertex: { top: -1 } });
+});
+
+const getVisibleVertices = memoizeOne((vertices, viewport, xIntervalTree, yIntervalTree) => {
+ const xVerticesMap = new Map();
+ const yVerticesMap = new Map();
+ const visibleVertices = new Map();
+ xIntervalTree.queryInterval(viewport.xMin, viewport.xMax, ([low, high, vertex]) => {
+  xVerticesMap.set(vertex.id, vertex);
+ });
+ yIntervalTree.queryInterval(viewport.yMin, viewport.yMax, ([low, high, vertex]) => {
+  yVerticesMap.set(vertex.id, vertex);
+ });
+
+ xVerticesMap.forEach((vertex, id) => {
+  if (yVerticesMap.has(id)) {
+   visibleVertices.set(id, vertex);
+  }
+ });
+
+ return visibleVertices;
+});
+
+function addEdge(vToEMap, edge, vertexId) {
+ let sourceVertexEdgeList = vToEMap.get(vertexId);
+ if (sourceVertexEdgeList) {
+  sourceVertexEdgeList.push(edge)
+ } else {
+  vToEMap.set(vertexId, [edge]);
+ }
+}
+
+function getRelevantEdgesAndMissedVertices(visibleVerticesMap, vToEMap, vertices) {
+ const universalVerticesMap = new Map(vertices.map(v => [v.id, v]));
+ return [...visibleVerticesMap.values()].reduce((res, vertex) => {
+  const vEdgeList = vToEMap.get(vertex.id) || [];
+  vEdgeList.forEach(edge => {
+   res.edges.set(edge.id, edge);
+   if (!visibleVerticesMap.has(edge.sourceId)) {
+    res.missedVertices.set(edge.sourceId, universalVerticesMap.get(edge.sourceId));
+   }
+   if (!visibleVerticesMap.has(edge.targetId)) {
+    res.missedVertices.set(edge.targetId, universalVerticesMap.get(edge.targetId));
+   }
   });
-
-  nextMap.forEach((value, id) => {
-    if (!prevMap.has(id)) {
-      connectionsAdded.push(value);
-    }
-  });
-
-  return {
-    connectionsAdded,
-    connectionsRemoved
-  };
+  return res;
+ }, { edges: new Map(), missedVertices: new Map() })
 }
 
 class Diagram extends React.PureComponent {
-  containerRef = React.createRef();
 
-  componentDidMount() {
-    jsPlumb.ready(() => {
-      this.plumbInstance = jsPlumb.getInstance(this.containerRef.current);
-      this.plumbConnections = {};
-    });
-    this.drawConnections();
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.connections !== this.props.connections) {
-      this.updateConnections(
-        getConnectionsUpdateItem(prevProps.connections, this.props.connections)
-      );
-    }
-  }
-
-  updateConnections({ connectionsAdded, connectionsRemoved }) {
-    this.removeConnectionsAndEndpoints(connectionsRemoved);
-    this.addConnectionsAndEndpoints(connectionsAdded);
-  }
-
-  removeConnectionsAndEndpoints = (deletedConnections = []) => {
-    deletedConnections
-      .map(connection => this.plumbConnections[connection.id])
-      .forEach(connection => {
-        const connectionEndpoints = connection.endpoints;
-        this.plumbInstance.deleteConnection(connection);
-        this.plumbInstance.deleteEndpoint(connectionEndpoints[0]);
-        this.plumbInstance.deleteEndpoint(connectionEndpoints[1]);
-      });
+ constructor(props) {
+  super(props);
+  this.state = {
+   viewport: {
+    xMin: 0,
+    xMax: CONTAINER_WIDTH,
+    yMin: 0,
+    yMax: CONTAINER_HEIGHT,
+   },
+   isContainerElReady: false,
   };
+  this.containerRef = React.createRef();
+  this.initIntervalTrees();
+  this.initVerticesToEdgesMap(props.vertices, props.edges);
+ }
 
-  addConnectionsAndEndpoints = (addedConnections = []) => {
-    addedConnections.forEach(connection => {
-      const sourceEndpoint = this.plumbInstance.addEndpoint(
-          connection.sourceId,
-          {
-            isSource: true,
-            anchor: "Bottom",
-            paintStyle: { radius: 1 },
-            connectorPaintStyle: { stroke: "blue", strokeWidth: 0 }
-          }
-        ),
-        targetEndpoint = this.plumbInstance.addEndpoint(connection.targetId, {
-          isTarget: true,
-          anchor: "Top",
-          paintStyle: { fill: "blue", radius: 1 },
-          connectorPaintStyle: { stroke: "blue", strokeWidth: 0 }
-        });
+ componentDidMount() {
+  this.setState({ isContainerElReady: true });
+ }
 
-      this.plumbConnections[connection.id] = this.plumbInstance.connect({
-        source: sourceEndpoint,
-        target: targetEndpoint,
-        paintStyle: { stroke: "black" },
-        connector: ["Flowchart", { curviness: 20 }]
-      });
-    });
-  };
+ initIntervalTrees() {
+  this.xIntervalTree = createIntervalTree();
+  this.yIntervalTree = createIntervalTree();
+  this.initXIntervalTree(this.props.vertices);
+  this.initYIntervalTree(this.props.vertices);
+ }
 
-  drawConnections = () => {
-    this.addConnectionsAndEndpoints(this.props.connections);
-  };
+ initXIntervalTree(vertices) {
+  vertices.forEach((vertex) => {
+   this.xIntervalTree.insert([vertex.left, vertex.left + vertex.width, vertex]);
+  });
+ }
 
-  render() {
-    return (
-      <div
-        className="diagramContainer full-height"
-        ref={this.containerRef}
-      >
-        {this.props.nodes.map(node => (
-          <Node key={node.id} node={node} />
-        ))}
-      </div>
-    );
+ initYIntervalTree(vertices) {
+  vertices.forEach((vertex) => {
+   this.yIntervalTree.insert([vertex.top, vertex.top + vertex.height, vertex]);
+  });
+ }
+
+ initVerticesToEdgesMap(vertices, edges) {
+  this.verticesToEdgesMap = edges.reduce((vToEMap, edge) => {
+   addEdge(vToEMap, edge, edge.sourceId);
+   addEdge(vToEMap, edge, edge.targetId);
+   return vToEMap;
+  }, new Map());
+ }
+
+ updateViewport = _throttle(target => {
+  this.setState({
+   viewport: {
+    xMin: target.scrollLeft,
+    xMax: target.scrollLeft + CONTAINER_WIDTH,
+    yMin: target.scrollTop,
+    yMax: target.scrollTop + CONTAINER_HEIGHT,
+   },
+  });
+ }, 0);
+
+ handleScroll = (e) => {
+  this.updateViewport(e.target);
+ };
+
+ getVisibleVertices() {
+  return getVisibleVertices(
+    this.props.vertices,
+    this.state.viewport,
+    this.xIntervalTree,
+    this.yIntervalTree,
+  );
+ }
+
+ renderSentinel() {
+  const { rightMostVertex, bottomMostVertex } = getExtremeVertices(this.props.vertices);
+  const rightSentinelX = rightMostVertex.left + rightMostVertex.width + MARGIN;
+  const bottomSentinelY = bottomMostVertex.top + bottomMostVertex.width + MARGIN;
+
+  return (
+    <div style={{
+     height: 1,
+     width: 1,
+     position: 'absolute',
+     left: 0,
+     top: 0,
+     transform: `translate3d(${rightSentinelX}px, ${bottomSentinelY}px, 0)`
+    }}/>
+  );
+ }
+
+ renderVertices(vertices) {
+  return vertices.map(vertex => (
+    <div
+      id={vertex.id}
+      key={vertex.id}
+      className="vertex"
+      style={{
+       height: vertex.height,
+       width: vertex.width,
+       position: 'absolute',
+       left: vertex.left,
+       top: vertex.top,
+      }}
+    >
+     {JSON.stringify(vertex)}
+    </div>
+  ));
+ }
+
+ renderEdges(edgesMap) {
+  if (!this.state.isContainerElReady) {
+   return null;
   }
+
+  return (
+    <Edges edges={[...edgesMap.values()]} containerEl={this.containerRef.current} />
+  );
+ }
+
+ render() {
+  const visibleVerticesMap = this.getVisibleVertices();
+  const { edges, missedVertices } = getRelevantEdgesAndMissedVertices(visibleVerticesMap, this.verticesToEdgesMap, this.props.vertices);
+  const vertices = [...visibleVerticesMap.values(), ...missedVertices.values()];
+
+  return (
+    <div ref={this.containerRef} className="diagramContainer" onScroll={this.handleScroll}
+      style={{ height: CONTAINER_HEIGHT, width: CONTAINER_WIDTH }}>
+     {this.renderVertices(vertices)}
+     {this.renderEdges(edges)}
+     {this.renderSentinel()}
+    </div>
+  )
+ }
 }
+
+Diagram.defaultProps = {
+ edges: [],
+};
 
 export default Diagram;
