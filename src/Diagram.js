@@ -26,14 +26,15 @@ const getExtremeVertices = memoizeOne((vertices) => {
 });
 
 const getVisibleVertices = memoizeOne((vertices, viewport, xIntervalTree, yIntervalTree) => {
+ const universalVerticesMap = new Map(vertices.map(v => [v.id, v]));
  const xVerticesMap = new Map();
  const yVerticesMap = new Map();
  const visibleVertices = new Map();
- xIntervalTree.queryInterval(viewport.xMin, viewport.xMax, ([low, high, vertex]) => {
-  xVerticesMap.set(vertex.id, vertex);
+ xIntervalTree.queryInterval(viewport.xMin, viewport.xMax, ([low, high, vertexId]) => {
+  xVerticesMap.set(vertexId, universalVerticesMap.get(vertexId));
  });
- yIntervalTree.queryInterval(viewport.yMin, viewport.yMax, ([low, high, vertex]) => {
-  yVerticesMap.set(vertex.id, vertex);
+ yIntervalTree.queryInterval(viewport.yMin, viewport.yMax, ([low, high, vertexId]) => {
+  yVerticesMap.set(vertexId, universalVerticesMap.get(vertexId));
  });
 
  xVerticesMap.forEach((vertex, id) => {
@@ -102,13 +103,13 @@ class Diagram extends React.PureComponent {
 
  initXIntervalTree(vertices) {
   vertices.forEach((vertex) => {
-   this.xIntervalTree.insert([vertex.left, vertex.left + vertex.width, vertex]);
+   this.xIntervalTree.insert([vertex.left, vertex.left + vertex.width, vertex.id]);
   });
  }
 
  initYIntervalTree(vertices) {
   vertices.forEach((vertex) => {
-   this.yIntervalTree.insert([vertex.top, vertex.top + vertex.height, vertex]);
+   this.yIntervalTree.insert([vertex.top, vertex.top + vertex.height, vertex.id]);
   });
  }
 
@@ -186,7 +187,7 @@ class Diagram extends React.PureComponent {
   }
 
   return (
-    <Edges edges={[...edgesMap.values()]} containerEl={this.containerRef.current} />
+    <Edges edges={[...edgesMap.values()]} containerEl={this.containerRef.current}/>
   );
  }
 
