@@ -5,6 +5,7 @@ import _throttle from 'lodash/throttle';
 
 import createIntervalTree from './lib/intervalTree';
 import Edges from './Edges';
+import {getAddedOrRemovedItems} from './helper';
 
 const MARGIN = 100;
 
@@ -83,6 +84,7 @@ class Diagram extends React.PureComponent {
     yMin: 0,
     yMax: CONTAINER_HEIGHT,
    },
+   version: 0,
    isContainerElReady: false,
   };
   this.containerRef = React.createRef();
@@ -94,22 +96,37 @@ class Diagram extends React.PureComponent {
   this.setState({ isContainerElReady: true });
  }
 
+ componentDidUpdate(prevProps, prevState, snapshot) {
+  if (prevProps.vertices !== this.props.vertices) {
+   this.updateIntervalTrees(
+     getAddedOrRemovedItems(prevProps.vertices, this.props.vertices)
+   );
+   this.setState(({ version }) => ({ version: version + 1 }));
+  }
+ }
+
  initIntervalTrees() {
-  this.xIntervalTree = createIntervalTree();
-  this.yIntervalTree = createIntervalTree();
   this.initXIntervalTree(this.props.vertices);
   this.initYIntervalTree(this.props.vertices);
  }
 
  initXIntervalTree(vertices) {
+  this.xIntervalTree = createIntervalTree();
+  this.xIntervalTreeNodes = {};
   vertices.forEach((vertex) => {
-   this.xIntervalTree.insert([vertex.left, vertex.left + vertex.width, vertex.id]);
+   const interval = [vertex.left, vertex.left + vertex.width, vertex.id];
+   this.xIntervalTreeNodes[vertex.id] = interval;
+   this.xIntervalTree.insert(interval);
   });
  }
 
  initYIntervalTree(vertices) {
+  this.yIntervalTree = createIntervalTree();
+  this.yIntervalTreeNodes = {};
   vertices.forEach((vertex) => {
-   this.yIntervalTree.insert([vertex.top, vertex.top + vertex.height, vertex.id]);
+   const interval = [vertex.top, vertex.top + vertex.height, vertex.id];
+   this.yIntervalTreeNodes[vertex.id] = interval;
+   this.yIntervalTree.insert(interval);
   });
  }
 
@@ -119,6 +136,23 @@ class Diagram extends React.PureComponent {
    addEdge(vToEMap, edge, edge.targetId);
    return vToEMap;
   }, new Map());
+ }
+
+ updateIntervalTrees({ itemsAdded, itemsRemoved }) {
+  itemsRemoved.forEach(vertex => {
+   this.xIntervalTree.remove(this.xIntervalTreeNodes[vertex.id]);
+   this.yIntervalTree.remove(this.yIntervalTreeNodes[vertex.id]);
+   delete this.xIntervalTreeNodes[vertex.id];
+   delete this.yIntervalTreeNodes[vertex.id]
+  });
+  itemsAdded.forEach(vertex => {
+   const xInterval = [vertex.left, vertex.left + vertex.width, vertex.id];
+   this.xIntervalTreeNodes[vertex.id] = xInterval;
+   this.xIntervalTree.insert(xInterval);
+   const yInterval = [vertex.top, vertex.top + vertex.height, vertex.id];
+   this.yIntervalTreeNodes[vertex.id] = yInterval;
+   this.yIntervalTree.insert(yInterval);
+  });
  }
 
  updateViewport = _throttle(target => {
@@ -181,13 +215,14 @@ class Diagram extends React.PureComponent {
   ));
  }
 
- renderEdges(edgesMap) {
+ renderEdges(edgesMap, vertices) {
   if (!this.state.isContainerElReady) {
    return null;
   }
 
   return (
-    <Edges edges={[...edgesMap.values()]} containerEl={this.containerRef.current}/>
+    <Edges onAction={this.props.onAction} edges={[...edgesMap.values()]} vertices={vertices}
+      containerEl={this.containerRef.current}/>
   );
  }
 
@@ -200,7 +235,7 @@ class Diagram extends React.PureComponent {
     <div ref={this.containerRef} className="diagramContainer" onScroll={this.handleScroll}
       style={{ height: CONTAINER_HEIGHT, width: CONTAINER_WIDTH }}>
      {this.renderVertices(vertices)}
-     {this.renderEdges(edges)}
+     {this.renderEdges(edges, vertices)}
      {this.renderSentinel()}
     </div>
   )

@@ -1,29 +1,7 @@
 import React, {PureComponent} from 'react';
 import {jsPlumb} from 'jsplumb';
 
-function getConnectionsUpdateItem(prevConnections, nextConnections) {
- const prevMap = new Map(prevConnections.map(i => [i.id, i]));
- const nextMap = new Map(nextConnections.map(i => [i.id, i]));
- const connectionsAdded = [];
- const connectionsRemoved = [];
-
- prevMap.forEach((value, id) => {
-  if (!nextMap.has(id)) {
-   connectionsRemoved.push(value);
-  }
- });
-
- nextMap.forEach((value, id) => {
-  if (!prevMap.has(id)) {
-   connectionsAdded.push(value);
-  }
- });
-
- return {
-  connectionsAdded,
-  connectionsRemoved
- };
-}
+import {getAddedOrRemovedItems} from './helper';
 
 class Edges extends PureComponent {
 
@@ -32,24 +10,50 @@ class Edges extends PureComponent {
    this.plumbInstance = jsPlumb.getInstance(this.props.containerEl);
    this.plumbConnections = {};
    this.drawConnections();
+   this.makeVerticesDraggable(this.props.vertices);
   });
  }
 
  componentDidUpdate(prevProps) {
   if (prevProps.edges !== this.props.edges) {
    this.updateConnections(
-     getConnectionsUpdateItem(prevProps.edges, this.props.edges)
+     getAddedOrRemovedItems(prevProps.edges, this.props.edges)
+   );
+  }
+  if (prevProps.vertices !== this.props.vertices) {
+   this.updateVertices(
+     getAddedOrRemovedItems(prevProps.vertices, this.props.vertices)
    );
   }
  }
 
- updateConnections({ connectionsAdded, connectionsRemoved }) {
-  this.removeConnectionsAndEndpoints(connectionsRemoved);
-  this.addConnectionsAndEndpoints(connectionsAdded);
+ makeVerticesDraggable(vertices) {
+  vertices.map((vertex, index) => {
+   this.plumbInstance.draggable(vertex.id, {
+    stop: dragEndEvent => {
+     this.props.onAction({
+      type: 'ITEM_DRAGGED',
+      payload: {
+       vertexId: dragEndEvent.el.id,
+       finalPos: dragEndEvent.finalPos,
+      },
+     });
+    },
+   });
+  });
  }
 
- removeConnectionsAndEndpoints = (deletedConnections = []) => {
-  deletedConnections
+ updateConnections({ itemsAdded, itemsRemoved }) {
+  this.removeConnectionsAndEndpoints(itemsRemoved);
+  this.addConnectionsAndEndpoints(itemsAdded);
+ }
+
+ updateVertices({ itemsAdded, itemsRemoved }) {
+  this.makeVerticesDraggable(itemsAdded);
+ }
+
+ removeConnectionsAndEndpoints = (removedConnections = []) => {
+  removedConnections
     .map(connection => this.plumbConnections[connection.id])
     .forEach(connection => {
      const connectionEndpoints = connection.endpoints;
