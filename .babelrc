@@ -1,0 +1,16 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "browsers": ["> 4%", "ie 11", "safari 8"],
+          "node": "current"
+        },
+        "useBuiltIns": false
+      }
+    ],
+    "@babel/preset-react"
+  ],
+  "plugins": ["lodash", "@babel/plugin-proposal-class-properties", "@babel/plugin-transform-runtime", "@babel/plugin-transform-react-jsx-source"]
+}
