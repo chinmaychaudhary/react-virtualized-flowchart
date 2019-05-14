@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import memoizeOne from "memoize-one";
 import _throttle from "lodash/throttle";
 
@@ -227,10 +228,8 @@ class Diagram extends React.PureComponent {
     const { rightMostVertex, bottomMostVertex } = getExtremeVertices(
       this.props.vertices
     );
-    const rightSentinelX =
-      rightMostVertex.left + rightMostVertex.width + MARGIN;
-    const bottomSentinelY =
-      bottomMostVertex.top + bottomMostVertex.width + MARGIN;
+    const sentinelX = rightMostVertex.left + rightMostVertex.width + MARGIN;
+    const sentinelY = bottomMostVertex.top + bottomMostVertex.width + MARGIN;
 
     return (
       <div
@@ -240,16 +239,16 @@ class Diagram extends React.PureComponent {
           position: "absolute",
           left: 0,
           top: 0,
-          transform: `translate3d(${rightSentinelX}px, ${bottomSentinelY}px, 0)`
+          transform: `translate3d(${sentinelX}px, ${sentinelY}px, 0)`
         }}
       />
     );
   }
 
   renderVertices(vertices) {
-    return vertices.map(vertex => (
+    return vertices.map((vertex, index) => (
       <React.Fragment key={vertex.id}>
-        {this.props.renderVertex({ vertex })}
+        {this.props.renderVertex({ vertex, index })}
       </React.Fragment>
     ));
   }
@@ -294,6 +293,16 @@ class Diagram extends React.PureComponent {
     );
   }
 }
+
+Diagram.propTypes = {
+  vertices: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      left: PropTypes.number,
+      top: PropTypes.number
+    })
+  )
+};
 
 Diagram.defaultProps = {
   edges: []
