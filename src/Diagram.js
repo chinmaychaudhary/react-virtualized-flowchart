@@ -27,7 +27,7 @@ const getExtremeVertices = memoizeOne(vertices => {
 });
 
 const getVisibleVertices = memoizeOne(
-  (vertices, viewport, xIntervalTree, yIntervalTree) => {
+  (vertices, viewport, xIntervalTree, yIntervalTree, version) => {
     const universalVerticesMap = new Map(vertices.map(v => [v.id, v]));
     const xVerticesMap = new Map();
     const yVerticesMap = new Map();
@@ -125,6 +125,7 @@ class Diagram extends React.PureComponent {
       version: 0,
       isContainerElReady: false
     };
+    this.vertices = props.vertices;
     this.containerRef = React.createRef();
     this.initIntervalTrees();
     this.initVerticesToEdgesMap(props.vertices, props.edges);
@@ -144,8 +145,15 @@ class Diagram extends React.PureComponent {
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps.vertices !== this.props.vertices) {
+      this.vertices = this.props.vertices;
       this.updateIntervalTrees(
         getAddedOrRemovedItems(prevProps.vertices, this.props.vertices)
+      );
+      this.setState(({ version }) => ({ version: version + 1 }));
+    }
+    if (prevProps.edges !== this.props.edges) {
+      this.updateEdges(
+        getAddedOrRemovedItems(prevProps.edges, this.props.edges)
       );
       this.setState(({ version }) => ({ version: version + 1 }));
     }
@@ -200,6 +208,17 @@ class Diagram extends React.PureComponent {
     });
   }
 
+  updateEdges({ itemsAdded, itemsRemoved }) {
+    itemsRemoved.forEach(edge => {
+      this.verticesToEdgesMap.delete(edge.sourceId);
+      this.verticesToEdgesMap.delete(edge.targetId);
+    });
+    itemsAdded.forEach(edge => {
+      addEdge(this.verticesToEdgesMap, edge, edge.sourceId);
+      addEdge(this.verticesToEdgesMap, edge, edge.targetId);
+    });
+  }
+
   updateScroll = _throttle(target => {
     this.setState({
       scroll: {
@@ -214,19 +233,20 @@ class Diagram extends React.PureComponent {
   };
 
   getVisibleVertices() {
-    const { scroll, container } = this.state;
+    const { scroll, container, version } = this.state;
 
     return getVisibleVertices(
-      this.props.vertices,
+      this.vertices,
       getViewport(scroll.left, scroll.top, container.width, container.height),
       this.xIntervalTree,
-      this.yIntervalTree
+      this.yIntervalTree,
+      version
     );
   }
 
   renderSentinel() {
     const { rightMostVertex, bottomMostVertex } = getExtremeVertices(
-      this.props.vertices
+      this.vertices
     );
     const sentinelX = rightMostVertex.left + rightMostVertex.width + MARGIN;
     const sentinelY = bottomMostVertex.top + bottomMostVertex.width + MARGIN;
@@ -273,7 +293,7 @@ class Diagram extends React.PureComponent {
     const { edges, missedVertices } = getRelevantEdgesAndMissedVertices(
       visibleVerticesMap,
       this.verticesToEdgesMap,
-      this.props.vertices
+      this.vertices
     );
     const vertices = [
       ...visibleVerticesMap.values(),

@@ -5,47 +5,38 @@ import Diagram from "./Diagram";
 import * as data1 from "./data/data1";
 import * as data2 from "./data/data2";
 
-import DiagramExample from './DiagramExample';
+import DiagramExample from "./DiagramExample";
 
 import "./styles.css";
 
 function App() {
   const [nodes, setNodes] = useState(data1.nodes);
   const [connections, setConnections] = useState([...data1.connections]);
-  const handleAdd = useCallback(
-    () => {
-      setNodes([...nodes, ...data2.nodes]);
-      setConnections([
-        ...connections,
-        {
-          id: "3-4",
-          sourceId: "3",
-          targetId: "4"
-        },
-        ...data2.connections
-      ]);
-    },
-    [nodes, connections]
-  );
-  const handleDetach = useCallback(
-    () => {
-      setConnections(connections.filter(i => i.id !== "3-4"));
-    },
-    [connections]
-  );
-  const handleAttach = useCallback(
-    () => {
-      setConnections([
-        ...connections,
-        {
-          id: "3-4",
-          sourceId: "3",
-          targetId: "4"
-        }
-      ]);
-    },
-    [connections]
-  );
+  const handleAdd = useCallback(() => {
+    setNodes([...nodes, ...data2.nodes]);
+    setConnections([
+      ...connections,
+      {
+        id: "3-4",
+        sourceId: "3",
+        targetId: "4"
+      },
+      ...data2.connections
+    ]);
+  }, [nodes, connections]);
+  const handleDetach = useCallback(() => {
+    setConnections(connections.filter(i => i.id !== "3-4"));
+  }, [connections]);
+  const handleAttach = useCallback(() => {
+    setConnections([
+      ...connections,
+      {
+        id: "3-4",
+        sourceId: "3",
+        targetId: "4"
+      }
+    ]);
+  }, [connections]);
 
   const handleRemove = useCallback(() => {
     setNodes(data1.nodes);
@@ -93,10 +84,18 @@ function App() {
     stateMachineConnections[currentState2].handler();
     setCurrentState2(stateMachineConnections[currentState2].next);
   };
+  const renderVertex = useCallback(
+    ({ vertex }) => <Vertex vertex={vertex} />,
+    []
+  );
 
   return (
     <div className="App">
-      <Diagram nodes={nodes} connections={connections} />
+      <Diagram
+        vertices={nodes}
+        edges={connections}
+        renderVertex={renderVertex}
+      />
       <button onClick={handleButton1Click}>
         {stateMachineForSubtree[currentState1].label}
       </button>
@@ -107,5 +106,23 @@ function App() {
   );
 }
 
+function Vertex({ vertex }) {
+  return (
+    <div
+      id={vertex.id}
+      className="vertex"
+      style={{
+        height: vertex.height,
+        width: vertex.width,
+        position: "absolute",
+        left: vertex.left,
+        top: vertex.top
+      }}
+    >
+      <span>{vertex.label}</span>
+    </div>
+  );
+}
+
 const rootElement = document.getElementById("root");
-ReactDOM.render(<DiagramExample />, rootElement);
+ReactDOM.render(<App />, rootElement);

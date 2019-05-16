@@ -1,3 +1,48 @@
+const nodes = [
+  {
+    id: "1",
+    label: 1,
+    height: 30,
+    width: 30,
+    top: 0,
+    left: 100
+  },
+  {
+    id: "2",
+    label: 2,
+    height: 30,
+    width: 30,
+    top: 100,
+    left: 0
+  },
+  {
+    id: "3",
+    label: 3,
+    height: 30,
+    width: 30,
+    top: 100,
+    left: 200
+  }
+];
+
+const connections = [
+  {
+    id: "1-2",
+    sourceId: "1",
+    targetId: "2"
+  },
+  {
+    id: "1-3",
+    sourceId: "1",
+    targetId: "3"
+  }
+];
+
+export { nodes };
+export { connections };
+
+/*
+
 const X_RANGE = [0, 2000];
 const Y_RANGE = [0, 3000];
 
@@ -55,3 +100,5 @@ function getArrangedVertices() {
 export const vertices = getArrangedVertices();
 export {nodes};
 export {connections};
+
+*/

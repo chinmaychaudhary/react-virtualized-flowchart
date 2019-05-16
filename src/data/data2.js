@@ -2,26 +2,26 @@ const nodes = [
   {
     id: "4",
     label: 4,
-    position: {
-      top: 50,
-      left: 400
-    }
+    top: 350,
+    left: 400,
+    height: 30,
+    width: 30
   },
   {
     id: "5",
     label: 5,
-    position: {
-      top: 150,
-      left: 300
-    }
+    top: 450,
+    left: 300,
+    height: 30,
+    width: 30
   },
   {
     id: "6",
     label: 6,
-    position: {
-      top: 150,
-      left: 500
-    }
+    top: 450,
+    left: 500,
+    height: 30,
+    width: 30
   }
 ];
 
