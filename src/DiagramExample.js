@@ -17,7 +17,7 @@ function reducer(state, action) {
   switch (action.type) {
     case "ITEM_DRAGGED": {
       const vertices = state.vertices.map(vertex =>
-        vertex.id === action.payload.vertexId
+        vertex.id === action.payload.vertexEl.dataset.id
           ? {
               ...vertex,
               left: action.payload.finalPos[0],
@@ -42,6 +42,7 @@ function Vertex({ vertex }) {
         left: vertex.left,
         top: vertex.top
       }}
+      data-id={vertex.id}
     >
       <span>{JSON.stringify(vertex)}</span>
     </div>

@@ -26,19 +26,20 @@ class Edges extends PureComponent {
     }
   }
 
+  handleStop = dragEndEvent => {
+    this.props.onAction({
+      type: "ITEM_DRAGGED",
+      payload: {
+        vertexEl: dragEndEvent.el,
+        finalPos: dragEndEvent.finalPos
+      }
+    });
+  };
+
   makeVerticesDraggable(vertices) {
-    vertices.map((vertex, index) => {
+    vertices.map(vertex => {
       this.plumbInstance.draggable(vertex.id, {
-        stop: dragEndEvent => {
-          this.props.onAction({
-            type: "ITEM_DRAGGED",
-            payload: {
-              vertexId: dragEndEvent.el.id,
-              finalPos: dragEndEvent.finalPos,
-              index
-            }
-          });
-        }
+        stop: this.handleStop
       });
     });
   }

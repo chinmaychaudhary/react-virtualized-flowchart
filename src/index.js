@@ -125,4 +125,4 @@ function Vertex({ vertex }) {
 }
 
 const rootElement = document.getElementById("root");
-ReactDOM.render(<App />, rootElement);
+ReactDOM.render(<DiagramExample />, rootElement);
