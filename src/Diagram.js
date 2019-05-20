@@ -66,6 +66,20 @@ function addEdge(vToEMap, edge, vertexId) {
   }
 }
 
+function removeEdge(vToEMap, edgeId, vertexId) {
+  let sourceVertexEdgeList = vToEMap.get(vertexId);
+  if (sourceVertexEdgeList) {
+    sourceVertexEdgeList = sourceVertexEdgeList.filter(
+      presentEdge => presentEdge.id !== edgeId
+    );
+  }
+  if (!sourceVertexEdgeList || !sourceVertexEdgeList.length) {
+    vToEMap.delete(vertexId);
+  } else {
+    vToEMap.set(vertexId, sourceVertexEdgeList);
+  }
+}
+
 function getRelevantEdgesAndMissedVertices(
   visibleVerticesMap,
   vToEMap,
@@ -144,17 +158,21 @@ class Diagram extends React.PureComponent {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
+    let shouldTriggerRender = false;
     if (prevProps.vertices !== this.props.vertices) {
       this.vertices = this.props.vertices;
       this.updateIntervalTrees(
         getAddedOrRemovedItems(prevProps.vertices, this.props.vertices)
       );
-      this.setState(({ version }) => ({ version: version + 1 }));
+      shouldTriggerRender = true;
     }
     if (prevProps.edges !== this.props.edges) {
       this.updateEdges(
         getAddedOrRemovedItems(prevProps.edges, this.props.edges)
       );
+      shouldTriggerRender = true;
+    }
+    if (shouldTriggerRender) {
       this.setState(({ version }) => ({ version: version + 1 }));
     }
   }
@@ -196,6 +214,16 @@ class Diagram extends React.PureComponent {
     }, new Map());
   }
 
+  addEdgeToVerticesToEdgesMap = edge => {
+    addEdge(this.verticesToEdgesMap, edge, edge.sourceId);
+    addEdge(this.verticesToEdgesMap, edge, edge.targetId);
+  };
+
+  removeEdgeFromVerticesToEdgesMap = edge => {
+    removeEdge(this.verticesToEdgesMap, edge.id, edge.sourceId);
+    removeEdge(this.verticesToEdgesMap, edge.id, edge.targetId);
+  };
+
   updateIntervalTrees({ itemsAdded, itemsRemoved }) {
     itemsRemoved.forEach(vertex => {
       const vertexId = vertex.id;
@@ -209,14 +237,8 @@ class Diagram extends React.PureComponent {
   }
 
   updateEdges({ itemsAdded, itemsRemoved }) {
-    itemsRemoved.forEach(edge => {
-      this.verticesToEdgesMap.delete(edge.sourceId);
-      this.verticesToEdgesMap.delete(edge.targetId);
-    });
-    itemsAdded.forEach(edge => {
-      addEdge(this.verticesToEdgesMap, edge, edge.sourceId);
-      addEdge(this.verticesToEdgesMap, edge, edge.targetId);
-    });
+    itemsRemoved.forEach(this.removeEdgeFromVerticesToEdgesMap);
+    itemsAdded.forEach(this.addEdgeToVerticesToEdgesMap);
   }
 
   updateScroll = _throttle(target => {
