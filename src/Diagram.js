@@ -124,6 +124,25 @@ function removeNode(intervalTree, intervalTreeNodes, nodeId) {
   delete intervalTreeNodes[nodeId];
 }
 
+function getSanitizedIntervalEndpoints(start, length) {
+  const _start = start || 0;
+  return [_start, _start + (length || 0)];
+}
+
+function makeXInterval(vertex) {
+  return [
+    ...getSanitizedIntervalEndpoints(vertex.left, vertex.width),
+    vertex.id
+  ];
+}
+
+function makeYInterval(vertex) {
+  return [
+    ...getSanitizedIntervalEndpoints(vertex.top, vertex.height),
+    vertex.id
+  ];
+}
+
 class Diagram extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -178,13 +197,13 @@ class Diagram extends React.PureComponent {
   }
 
   addToXIntervalTree = vertex => {
-    const interval = [vertex.left, vertex.left + vertex.width, vertex.id];
+    const interval = makeXInterval(vertex);
     this.xIntervalTreeNodes[vertex.id] = interval;
     this.xIntervalTree.insert(interval);
   };
 
   addToYIntervalTree = vertex => {
-    const interval = [vertex.top, vertex.top + vertex.height, vertex.id];
+    const interval = makeYInterval(vertex);
     this.yIntervalTreeNodes[vertex.id] = interval;
     this.yIntervalTree.insert(interval);
   };
