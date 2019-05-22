@@ -277,7 +277,7 @@ class Diagram extends React.PureComponent {
     if (e.target !== e.currentTarget) {
       return;
     }
-    this.updateScroll(e.target);
+    this.updateScroll(e.currentTarget);
   };
 
   getVisibleVertices() {
@@ -332,6 +332,11 @@ class Diagram extends React.PureComponent {
         edges={[...edgesMap.values()]}
         vertices={vertices.map(v => v.vertex)}
         containerEl={this.containerRef.current}
+        sourceEndpointStyles={this.props.sourceEndpointStyles}
+        sourceEndpointOptions={this.props.sourceEndpointOptions}
+        targetEndpointStyles={this.props.targetEndpointStyles}
+        targetEndpointOptions={this.props.targetEndpointOptions}
+        edgeStyles={this.props.edgeStyles}
       />
     );
   }

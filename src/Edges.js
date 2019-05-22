@@ -67,23 +67,21 @@ class Edges extends PureComponent {
   addConnectionsAndEndpoints = (addedEdges = []) => {
     addedEdges.forEach(edge => {
       const sourceEndpoint = this.plumbInstance.addEndpoint(edge.sourceId, {
-          isSource: true,
-          anchor: "Bottom",
-          paintStyle: { radius: 1 },
-          connectorPaintStyle: { stroke: "blue", strokeWidth: 0 }
+          ...(edge.sourceEndpointStyles || this.props.sourceEndpointStyles),
+          ...(edge.sourceEndpointOptions || this.props.sourceEndpointOptions),
+          isSource: true
         }),
         targetEndpoint = this.plumbInstance.addEndpoint(edge.targetId, {
-          isTarget: true,
-          anchor: "Top",
-          paintStyle: { fill: "blue", radius: 1 },
-          connectorPaintStyle: { stroke: "blue", strokeWidth: 0 }
+          ...(edge.targetEndpointStyles || this.props.targetEndpointStyles),
+          ...(edge.targetEndpointOptions || this.props.targetEndpointOptions),
+          isTarget: true
         });
 
       this.plumbConnections[edge.id] = this.plumbInstance.connect({
+        ...(edge.styles || this.props.edgeStyles),
+        ...(edge.options || this.props.edgeOptions),
         source: sourceEndpoint,
         target: targetEndpoint,
-        paintStyle: { stroke: "black" },
-        connector: ["Flowchart", { curviness: 0, cornerRadius: 20 }],
         overlays: [["Label", { label: edge.name }]]
       });
     });
@@ -100,6 +98,25 @@ class Edges extends PureComponent {
 
 Edges.displayName = "Edges";
 Edges.propTypes = {};
-Edges.defaultProps = {};
+Edges.defaultProps = {
+  sourceEndpointStyles: {
+    paintStyle: { radius: 1 },
+    connectorPaintStyle: { stroke: "blue", strokeWidth: 0 }
+  },
+  sourceEndpointOptions: {
+    anchor: "Bottom"
+  },
+  targetEndpointStyles: {
+    paintStyle: { fill: "blue", radius: 1 },
+    connectorPaintStyle: { stroke: "blue", strokeWidth: 0 }
+  },
+  targetEndpointOptions: {
+    anchor: "Top"
+  },
+  edgeStyles: {
+    paintStyle: { stroke: "black" },
+    connector: ["Flowchart", { curviness: 0, cornerRadius: 20 }]
+  }
+};
 
 export default Edges;
