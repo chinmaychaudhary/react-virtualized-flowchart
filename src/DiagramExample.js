@@ -30,7 +30,7 @@ function reducer(state, action) {
   }
 }
 
-function Vertex({ vertex }) {
+function Vertex({ vertex, index }) {
   return (
     <div
       id={vertex.id}
@@ -43,8 +43,9 @@ function Vertex({ vertex }) {
         top: vertex.top
       }}
       data-id={vertex.id}
+      data-index={index}
     >
-      <span>{JSON.stringify(vertex)}</span>
+      <span>{index}</span>
     </div>
   );
 }
@@ -52,7 +53,7 @@ function Vertex({ vertex }) {
 export default function DiagramExample() {
   const [state, dispatch] = useReducer(reducer, initialState, init);
   const renderVertex = useCallback(
-    ({ vertex }) => <Vertex vertex={vertex} />,
+    ({ vertex, index }) => <Vertex vertex={vertex} index={index} />,
     []
   );
 

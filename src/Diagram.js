@@ -28,7 +28,9 @@ const getExtremeVertices = memoizeOne(vertices => {
 
 const getVisibleVertices = memoizeOne(
   (vertices, viewport, xIntervalTree, yIntervalTree, version) => {
-    const universalVerticesMap = new Map(vertices.map(v => [v.id, v]));
+    const universalVerticesMap = new Map(
+      vertices.map((v, index) => [v.id, { vertex: v, index }])
+    );
     const xVerticesMap = new Map();
     const yVerticesMap = new Map();
     const visibleVertices = new Map();
@@ -85,9 +87,11 @@ function getRelevantEdgesAndMissedVertices(
   vToEMap,
   vertices
 ) {
-  const universalVerticesMap = new Map(vertices.map(v => [v.id, v]));
+  const universalVerticesMap = new Map(
+    vertices.map((v, index) => [v.id, { vertex: v, index }])
+  );
   return [...visibleVerticesMap.values()].reduce(
-    (res, vertex) => {
+    (res, { vertex }) => {
       const vEdgeList = vToEMap.get(vertex.id) || [];
       vEdgeList.forEach(edge => {
         res.edges.set(edge.id, edge);
@@ -270,6 +274,9 @@ class Diagram extends React.PureComponent {
   }, 0);
 
   handleScroll = e => {
+    if (e.target !== e.currentTarget) {
+      return;
+    }
     this.updateScroll(e.target);
   };
 
@@ -307,7 +314,7 @@ class Diagram extends React.PureComponent {
   }
 
   renderVertices(vertices) {
-    return vertices.map((vertex, index) => (
+    return vertices.map(({ vertex, index }) => (
       <React.Fragment key={vertex.id}>
         {this.props.renderVertex({ vertex, index })}
       </React.Fragment>
@@ -323,7 +330,7 @@ class Diagram extends React.PureComponent {
       <Edges
         onAction={this.props.onAction}
         edges={[...edgesMap.values()]}
-        vertices={vertices}
+        vertices={vertices.map(v => v.vertex)}
         containerEl={this.containerRef.current}
       />
     );
