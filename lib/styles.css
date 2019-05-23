@@ -6,12 +6,6 @@
   background-color: #e6e6e6;
 }
 
-.diagramContainer {
-  overflow: auto;
-  position: relative;
-  border: 1px solid red;
-}
-
 .vertex {
   border: 1px solid;
   display: flex;
@@ -21,12 +15,12 @@
   word-break: break-all;
 }
 
-.full-height {
-  height: 100%;
-}
-
 .spr {
   position: relative;
+}
+
+.full-height {
+  height: 100%;
 }
 
 body,
