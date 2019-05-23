@@ -82,7 +82,7 @@ class Edges extends PureComponent {
         ...(edge.options || this.props.edgeOptions),
         source: sourceEndpoint,
         target: targetEndpoint,
-        overlays: [["Label", { label: edge.name }]]
+        overlays: edge.overlays
       });
     });
   };

@@ -355,8 +355,9 @@ class Diagram extends React.PureComponent {
 
     return (
       <div
+        style={{ height: "100%", overflow: "auto", position: "relative" }}
         ref={this.containerRef}
-        className="diagramContainer full-height"
+        className="diagramContainer"
         onScroll={this.handleScroll}
       >
         {this.renderVertices(vertices)}
