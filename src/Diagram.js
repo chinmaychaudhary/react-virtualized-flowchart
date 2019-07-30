@@ -337,6 +337,7 @@ class Diagram extends React.PureComponent {
         targetEndpointStyles={this.props.targetEndpointStyles}
         targetEndpointOptions={this.props.targetEndpointOptions}
         edgeStyles={this.props.edgeStyles}
+        draggablePlumbOptions={this.props.draggablePlumbOptions}
       />
     );
   }
@@ -375,7 +376,10 @@ Diagram.propTypes = {
       left: PropTypes.number,
       top: PropTypes.number
     })
-  )
+  ),
+  draggablePlumbOptions: PropTypes.shape({
+    grid: PropTypes.arrayOf(PropTypes.number)
+  })
 };
 
 Diagram.defaultProps = {

@@ -1,4 +1,5 @@
 import React, { PureComponent } from "react";
+import PropTypes from "prop-types";
 import { jsPlumb } from "jsplumb";
 
 import { getAddedOrRemovedItems } from "./helper";
@@ -39,6 +40,7 @@ class Edges extends PureComponent {
   makeVerticesDraggable(vertices) {
     vertices.map(vertex => {
       this.plumbInstance.draggable(vertex.id, {
+        ...this.props.draggablePlumbOptions,
         stop: this.handleStop
       });
     });
@@ -97,7 +99,11 @@ class Edges extends PureComponent {
 }
 
 Edges.displayName = "Edges";
-Edges.propTypes = {};
+Edges.propTypes = {
+  draggablePlumbOptions: PropTypes.shape({
+    grid: PropTypes.arrayOf(PropTypes.number)
+  })
+};
 Edges.defaultProps = {
   sourceEndpointStyles: {
     paintStyle: { radius: 1 },
