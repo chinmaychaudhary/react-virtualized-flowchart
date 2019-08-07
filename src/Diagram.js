@@ -345,13 +345,17 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  renderSentinel() {
+  getExtremeXAndY() {
     const { rightMostVertex, bottomMostVertex } = getExtremeVertices(
       this.vertices
     );
     const sentinelX = rightMostVertex.left + rightMostVertex.width + MARGIN;
     const sentinelY = bottomMostVertex.top + bottomMostVertex.width + MARGIN;
 
+    return [sentinelX, sentinelY];
+  }
+
+  renderSentinel(x, y) {
     return (
       <div
         style={{
@@ -360,10 +364,14 @@ class Diagram extends React.PureComponent {
           position: "absolute",
           left: 0,
           top: 0,
-          transform: `translate3d(${sentinelX}px, ${sentinelY}px, 0)`
+          transform: `translate3d(${x}px, ${y}px, 0)`
         }}
       />
     );
+  }
+
+  renderBackground(x, y) {
+    return this.props.renderBackground(x, y);
   }
 
   renderVertices(vertices) {
@@ -400,6 +408,7 @@ class Diagram extends React.PureComponent {
     const edges = this.getVisibleEdges();
 
     const vertices = [...visibleVerticesMap.values()];
+    const [extremeX, extremeY] = this.getExtremeXAndY();
 
     return (
       <div
@@ -410,7 +419,8 @@ class Diagram extends React.PureComponent {
       >
         {this.renderVertices(vertices)}
         {this.renderEdges(edges, vertices)}
-        {this.renderSentinel()}
+        {this.renderSentinel(extremeX, extremeY)}
+        {this.renderBackground(extremeX, extremeY)}
       </div>
     );
   }
@@ -426,11 +436,15 @@ Diagram.propTypes = {
   ),
   draggablePlumbOptions: PropTypes.shape({
     grid: PropTypes.arrayOf(PropTypes.number)
-  })
+  }),
+  renderBackground: PropTypes.func
 };
 
 Diagram.defaultProps = {
-  edges: []
+  edges: [],
+  renderBackground() {
+    return null;
+  }
 };
 
 export default Diagram;

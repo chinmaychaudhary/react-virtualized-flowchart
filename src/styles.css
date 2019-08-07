@@ -29,6 +29,13 @@ h2 {
   margin: 0;
 }
 
+.sq-bg {
+  background-color: #f7f8fd;
+  background-size: 60px 60px;
+  background-image: linear-gradient(to right, #e6e9f9 1px, transparent 1px),
+    linear-gradient(to bottom, #e6e9f9 1px, transparent 1px);
+}
+
 * {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;

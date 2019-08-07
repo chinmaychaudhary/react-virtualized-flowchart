@@ -56,6 +56,12 @@ export default function DiagramExample() {
     ({ vertex, index }) => <Vertex vertex={vertex} index={index} />,
     []
   );
+  const renderBackground = useCallback(
+    (x, y) => (
+      <div className="sq-bg" style={{ height: `${y}px`, width: `${x}px` }} />
+    ),
+    []
+  );
 
   return (
     <Diagram
@@ -63,6 +69,7 @@ export default function DiagramExample() {
       vertices={state.vertices}
       edges={state.edges}
       renderVertex={renderVertex}
+      renderBackground={renderBackground}
     />
   );
 }
