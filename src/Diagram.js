@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import memoizeOne from "memoize-one";
 import _throttle from "lodash/throttle";
+import invariant from "invariant";
 
 import createIntervalTree from "./lib/intervalTree";
 import Edges from "./Edges";
@@ -26,32 +27,51 @@ const getExtremeVertices = memoizeOne(vertices => {
   );
 });
 
+function getVerticesMap(vertices) {
+  return new Map(vertices.map((v, index) => [v.id, { vertex: v, index }]));
+}
+
 const getVisibleVertices = memoizeOne(
-  (vertices, viewport, xIntervalTree, yIntervalTree, version) => {
-    const universalVerticesMap = new Map(
-      vertices.map((v, index) => [v.id, { vertex: v, index }])
-    );
-    const xVerticesMap = new Map();
-    const yVerticesMap = new Map();
+  (universalVerticesMap, visibleEdgesMap, version) => {
+    const visibleVertices = new Map();
+    visibleEdgesMap.forEach(edge => {
+      visibleVertices.set(
+        edge.sourceId,
+        universalVerticesMap.get(edge.sourceId)
+      );
+      visibleVertices.set(
+        edge.targetId,
+        universalVerticesMap.get(edge.targetId)
+      );
+    });
+
+    return visibleVertices;
+  }
+);
+
+const getVisibleEdges = memoizeOne(
+  (viewport, xIntervalTree, yIntervalTree, version) => {
+    const xEdgesMap = new Map();
+    const yEdgesMap = new Map();
     const visibleVertices = new Map();
     xIntervalTree.queryInterval(
       viewport.xMin,
       viewport.xMax,
-      ([low, high, vertexId]) => {
-        xVerticesMap.set(vertexId, universalVerticesMap.get(vertexId));
+      ([low, high, edge]) => {
+        xEdgesMap.set(edge.id, edge);
       }
     );
     yIntervalTree.queryInterval(
       viewport.yMin,
       viewport.yMax,
-      ([low, high, vertexId]) => {
-        yVerticesMap.set(vertexId, universalVerticesMap.get(vertexId));
+      ([low, high, edge]) => {
+        yEdgesMap.set(edge.id, edge);
       }
     );
 
-    xVerticesMap.forEach((vertex, id) => {
-      if (yVerticesMap.has(id)) {
-        visibleVertices.set(id, vertex);
+    xEdgesMap.forEach((edge, edgeId) => {
+      if (yEdgesMap.has(edgeId)) {
+        visibleVertices.set(edgeId, edge);
       }
     });
 
@@ -82,38 +102,6 @@ function removeEdge(vToEMap, edgeId, vertexId) {
   }
 }
 
-function getRelevantEdgesAndMissedVertices(
-  visibleVerticesMap,
-  vToEMap,
-  vertices
-) {
-  const universalVerticesMap = new Map(
-    vertices.map((v, index) => [v.id, { vertex: v, index }])
-  );
-  return [...visibleVerticesMap.values()].reduce(
-    (res, { vertex }) => {
-      const vEdgeList = vToEMap.get(vertex.id) || [];
-      vEdgeList.forEach(edge => {
-        res.edges.set(edge.id, edge);
-        if (!visibleVerticesMap.has(edge.sourceId)) {
-          res.missedVertices.set(
-            edge.sourceId,
-            universalVerticesMap.get(edge.sourceId)
-          );
-        }
-        if (!visibleVerticesMap.has(edge.targetId)) {
-          res.missedVertices.set(
-            edge.targetId,
-            universalVerticesMap.get(edge.targetId)
-          );
-        }
-      });
-      return res;
-    },
-    { edges: new Map(), missedVertices: new Map() }
-  );
-}
-
 const getViewport = memoizeOne(
   (scrollLeft, scrollTop, clientWidth, clientHeight) => ({
     xMin: scrollLeft,
@@ -128,23 +116,22 @@ function removeNode(intervalTree, intervalTreeNodes, nodeId) {
   delete intervalTreeNodes[nodeId];
 }
 
-function getSanitizedIntervalEndpoints(start, length) {
-  const _start = start || 0;
-  return [_start, _start + (length || 0)];
+function makeXIntervalForEdge(edge, v1, v2) {
+  const x1 = Math.min(v1.left, v2.left) || 0;
+  const x2 = Math.max(
+    (v1.left || 0) + (v1.width || 0),
+    (v2.left || 0) + (v2.width || 0)
+  );
+  return [x1, x2, edge];
 }
 
-function makeXInterval(vertex) {
-  return [
-    ...getSanitizedIntervalEndpoints(vertex.left, vertex.width),
-    vertex.id
-  ];
-}
-
-function makeYInterval(vertex) {
-  return [
-    ...getSanitizedIntervalEndpoints(vertex.top, vertex.height),
-    vertex.id
-  ];
+function makeYIntervalForEdge(edge, v1, v2) {
+  const y1 = Math.min(v1.top, v2.top) || 0;
+  const y2 = Math.max(
+    (v1.top || 0) + (v1.height || 0),
+    (v2.top || 0) + (v2.height || 0)
+  );
+  return [y1, y2, edge];
 }
 
 class Diagram extends React.PureComponent {
@@ -162,10 +149,10 @@ class Diagram extends React.PureComponent {
       version: 0,
       isContainerElReady: false
     };
-    this.vertices = props.vertices;
     this.containerRef = React.createRef();
-    this.initIntervalTrees();
-    this.initVerticesToEdgesMap(props.vertices, props.edges);
+    const { verticesMap } = this.setVertices(props.vertices);
+    this.initVerticesToEdgesMap(props.edges);
+    this.initIntervalTrees(props.edges, verticesMap);
   }
 
   componentDidMount() {
@@ -182,54 +169,81 @@ class Diagram extends React.PureComponent {
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     let shouldTriggerRender = false;
-    if (prevProps.vertices !== this.props.vertices) {
-      this.vertices = this.props.vertices;
-      this.updateIntervalTrees(
-        getAddedOrRemovedItems(prevProps.vertices, this.props.vertices)
-      );
-      shouldTriggerRender = true;
+    const didVerticesChange = prevProps.vertices !== this.props.vertices;
+    let { verticesMap, verticesToEdgesMap } = this;
+
+    if (didVerticesChange) {
+      verticesMap = this.setVertices(this.props.vertices).verticesMap;
     }
+
     if (prevProps.edges !== this.props.edges) {
-      this.updateEdges(
-        getAddedOrRemovedItems(prevProps.edges, this.props.edges)
+      verticesToEdgesMap = this.updateEdges(
+        getAddedOrRemovedItems(prevProps.edges, this.props.edges),
+        verticesMap
+      ).verticesToEdgesMap;
+      shouldTriggerRender = true;
+    }
+
+    if (didVerticesChange) {
+      this.updateIntervalTrees(
+        getAddedOrRemovedItems(prevProps.vertices, this.props.vertices),
+        verticesToEdgesMap
       );
       shouldTriggerRender = true;
     }
+
     if (shouldTriggerRender) {
       this.setState(({ version }) => ({ version: version + 1 }));
     }
   }
 
-  addToXIntervalTree = vertex => {
-    const interval = makeXInterval(vertex);
-    this.xIntervalTreeNodes[vertex.id] = interval;
+  setVertices(vertices) {
+    this.vertices = vertices;
+    this.verticesMap = getVerticesMap(vertices);
+    return { vertices: this.vertices, verticesMap: this.verticesMap };
+  }
+
+  addToXIntervalTree = (edge, verticesMap) => {
+    const edgeId = edge.id;
+
+    const sourceVertex = verticesMap.get(edge.sourceId);
+    invariant(sourceVertex, `sourceVertex missing for the edgeId - ${edgeId}`);
+    const targetVertex = verticesMap.get(edge.targetId);
+    invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
+
+    const interval = makeXIntervalForEdge(
+      edge,
+      sourceVertex.vertex,
+      targetVertex.vertex
+    );
+    this.xIntervalTreeNodes[edgeId] = interval;
     this.xIntervalTree.insert(interval);
   };
 
-  addToYIntervalTree = vertex => {
-    const interval = makeYInterval(vertex);
-    this.yIntervalTreeNodes[vertex.id] = interval;
+  addToYIntervalTree = (edge, verticesMap) => {
+    const edgeId = edge.id;
+
+    const sourceVertex = verticesMap.get(edge.sourceId);
+    invariant(sourceVertex, `sourceVertex missing for the edgeId - ${edgeId}`);
+    const targetVertex = verticesMap.get(edge.targetId);
+    invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
+
+    const interval = makeYIntervalForEdge(
+      edge,
+      sourceVertex.vertex,
+      targetVertex.vertex
+    );
+
+    this.yIntervalTreeNodes[edge.id] = interval;
     this.yIntervalTree.insert(interval);
   };
 
-  initIntervalTrees() {
-    this.initXIntervalTree(this.props.vertices);
-    this.initYIntervalTree(this.props.vertices);
+  initIntervalTrees(edges, verticesMap) {
+    this.initXIntervalTree(edges, verticesMap);
+    this.initYIntervalTree(edges, verticesMap);
   }
 
-  initXIntervalTree(vertices) {
-    this.xIntervalTree = createIntervalTree();
-    this.xIntervalTreeNodes = {};
-    vertices.forEach(this.addToXIntervalTree);
-  }
-
-  initYIntervalTree(vertices) {
-    this.yIntervalTree = createIntervalTree();
-    this.yIntervalTreeNodes = {};
-    vertices.forEach(this.addToYIntervalTree);
-  }
-
-  initVerticesToEdgesMap(vertices, edges) {
+  initVerticesToEdgesMap(edges) {
     this.verticesToEdgesMap = edges.reduce((vToEMap, edge) => {
       addEdge(vToEMap, edge, edge.sourceId);
       addEdge(vToEMap, edge, edge.targetId);
@@ -247,21 +261,51 @@ class Diagram extends React.PureComponent {
     removeEdge(this.verticesToEdgesMap, edge.id, edge.targetId);
   };
 
-  updateIntervalTrees({ itemsAdded, itemsRemoved }) {
+  initXIntervalTree(edges, verticesMap) {
+    this.xIntervalTree = createIntervalTree();
+    this.xIntervalTreeNodes = {};
+    edges.forEach(edge => this.addToXIntervalTree(edge, verticesMap));
+  }
+
+  initYIntervalTree(edges, verticesMap) {
+    this.yIntervalTree = createIntervalTree();
+    this.yIntervalTreeNodes = {};
+    edges.forEach(edge => this.addToYIntervalTree(edge, verticesMap));
+  }
+
+  updateIntervalTrees({ itemsAdded, itemsRemoved }, verticesToEdgesMap) {
     itemsRemoved.forEach(vertex => {
       const vertexId = vertex.id;
-      removeNode(this.xIntervalTree, this.xIntervalTreeNodes, vertexId);
-      removeNode(this.yIntervalTree, this.yIntervalTreeNodes, vertexId);
+      const edges = verticesToEdgesMap.get(vertexId);
+      edges.forEach(edge => {
+        removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edge.id);
+        removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edge.id);
+      });
     });
     itemsAdded.forEach(vertex => {
-      this.addToXIntervalTree(vertex);
-      this.addToYIntervalTree(vertex);
+      const edges = this.verticesToEdgesMap.get(vertex.id);
+      const { verticesMap } = this;
+      edges.forEach(edge => {
+        this.addToXIntervalTree(edge, verticesMap);
+        this.addToYIntervalTree(edge, verticesMap);
+      });
     });
   }
 
-  updateEdges({ itemsAdded, itemsRemoved }) {
-    itemsRemoved.forEach(this.removeEdgeFromVerticesToEdgesMap);
-    itemsAdded.forEach(this.addEdgeToVerticesToEdgesMap);
+  updateEdges({ itemsAdded, itemsRemoved }, verticesMap) {
+    itemsRemoved.forEach(edge => {
+      const edgeId = edge.id;
+      this.removeEdgeFromVerticesToEdgesMap(edge);
+      removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edgeId);
+      removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edgeId);
+    });
+    itemsAdded.forEach(edge => {
+      this.addEdgeToVerticesToEdgesMap(edge);
+      this.addToXIntervalTree(edge, verticesMap);
+      this.addToYIntervalTree(edge, verticesMap);
+    });
+
+    return { verticesToEdgesMap: this.verticesToEdgesMap };
   }
 
   updateScroll = _throttle(target => {
@@ -280,14 +324,23 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  getVisibleVertices() {
+  getVisibleEdges() {
     const { scroll, container, version } = this.state;
 
-    return getVisibleVertices(
-      this.vertices,
+    return getVisibleEdges(
       getViewport(scroll.left, scroll.top, container.width, container.height),
       this.xIntervalTree,
       this.yIntervalTree,
+      version
+    );
+  }
+
+  getVisibleVertices() {
+    const { version } = this.state;
+
+    return getVisibleVertices(
+      this.verticesMap,
+      this.getVisibleEdges(),
       version
     );
   }
@@ -344,15 +397,9 @@ class Diagram extends React.PureComponent {
 
   render() {
     const visibleVerticesMap = this.getVisibleVertices();
-    const { edges, missedVertices } = getRelevantEdgesAndMissedVertices(
-      visibleVerticesMap,
-      this.verticesToEdgesMap,
-      this.vertices
-    );
-    const vertices = [
-      ...visibleVerticesMap.values(),
-      ...missedVertices.values()
-    ];
+    const edges = this.getVisibleEdges();
+
+    const vertices = [...visibleVerticesMap.values()];
 
     return (
       <div
