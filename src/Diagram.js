@@ -10,20 +10,31 @@ import { getAddedOrRemovedItems } from "./helper";
 
 const MARGIN = 100;
 
+function getXUpper(vertex) {
+  return (vertex.left || 0) + (vertex.width || 0);
+}
+
+function getYUpper(vertex) {
+  return (vertex.top || 0) + (vertex.height || 0);
+}
+
 const getExtremeVertices = memoizeOne(vertices => {
   return vertices.reduce(
     (res, vertex) => {
-      if (res.rightMostVertex.left < vertex.left) {
+      if (getXUpper(res.rightMostVertex) < getXUpper(vertex)) {
         res.rightMostVertex = vertex;
       }
 
-      if (res.bottomMostVertex.top < vertex.top) {
+      if (getYUpper(res.bottomMostVertex) < getYUpper(vertex)) {
         res.bottomMostVertex = vertex;
       }
 
       return res;
     },
-    { rightMostVertex: { left: -1 }, bottomMostVertex: { top: -1 } }
+    {
+      rightMostVertex: { left: -1, width: 0 },
+      bottomMostVertex: { top: -1, height: 0 }
+    }
   );
 });
 
@@ -359,8 +370,9 @@ class Diagram extends React.PureComponent {
     const { rightMostVertex, bottomMostVertex } = getExtremeVertices(
       this.vertices
     );
-    const sentinelX = rightMostVertex.left + rightMostVertex.width + MARGIN;
-    const sentinelY = bottomMostVertex.top + bottomMostVertex.width + MARGIN;
+
+    const sentinelX = getXUpper(rightMostVertex) + MARGIN;
+    const sentinelY = getYUpper(bottomMostVertex) + MARGIN;
 
     return [sentinelX, sentinelY];
   }
