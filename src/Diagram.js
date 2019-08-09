@@ -112,6 +112,9 @@ const getViewport = memoizeOne(
 );
 
 function removeNode(intervalTree, intervalTreeNodes, nodeId) {
+  if (!intervalTreeNodes[nodeId]) {
+    return;
+  }
   intervalTree.remove(intervalTreeNodes[nodeId]);
   delete intervalTreeNodes[nodeId];
 }
@@ -205,6 +208,9 @@ class Diagram extends React.PureComponent {
 
   addToXIntervalTree = (edge, verticesMap) => {
     const edgeId = edge.id;
+    if (this.xIntervalTreeNodes[edgeId]) {
+      return;
+    }
 
     const sourceVertex = verticesMap.get(edge.sourceId);
     invariant(sourceVertex, `sourceVertex missing for the edgeId - ${edgeId}`);
@@ -223,6 +229,10 @@ class Diagram extends React.PureComponent {
   addToYIntervalTree = (edge, verticesMap) => {
     const edgeId = edge.id;
 
+    if (this.yIntervalTreeNodes[edgeId]) {
+      return;
+    }
+
     const sourceVertex = verticesMap.get(edge.sourceId);
     invariant(sourceVertex, `sourceVertex missing for the edgeId - ${edgeId}`);
     const targetVertex = verticesMap.get(edge.targetId);
@@ -234,7 +244,7 @@ class Diagram extends React.PureComponent {
       targetVertex.vertex
     );
 
-    this.yIntervalTreeNodes[edge.id] = interval;
+    this.yIntervalTreeNodes[edgeId] = interval;
     this.yIntervalTree.insert(interval);
   };
 
