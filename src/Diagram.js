@@ -286,14 +286,14 @@ class Diagram extends React.PureComponent {
   updateIntervalTrees({ itemsAdded, itemsRemoved }, verticesToEdgesMap) {
     itemsRemoved.forEach(vertex => {
       const vertexId = vertex.id;
-      const edges = verticesToEdgesMap.get(vertexId);
+      const edges = verticesToEdgesMap.get(vertexId) || [];
       edges.forEach(edge => {
         removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edge.id);
         removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edge.id);
       });
     });
     itemsAdded.forEach(vertex => {
-      const edges = this.verticesToEdgesMap.get(vertex.id);
+      const edges = verticesToEdgesMap.get(vertex.id);
       const { verticesMap } = this;
       edges.forEach(edge => {
         this.addToXIntervalTree(edge, verticesMap);
