@@ -37,11 +37,25 @@ class Edges extends PureComponent {
     });
   };
 
+  handleDrop = dropEndEvent => {
+    this.props.onAction({
+      type: "ITEM_DROPPED",
+      payload: {
+        dropEndEvent
+      }
+    });
+  };
+
   makeVerticesDraggable(vertices) {
     vertices.map(vertex => {
       this.plumbInstance.draggable(vertex.id, {
-        ...this.props.draggablePlumbOptions,
+        ...this.props.draggableOptions,
         stop: this.handleStop
+      });
+
+      this.plumbInstance.droppable(vertex.id, {
+        ...this.props.droppableOptions,
+        drop: this.handleDrop
       });
     });
   }
@@ -100,8 +114,15 @@ class Edges extends PureComponent {
 
 Edges.displayName = "Edges";
 Edges.propTypes = {
-  draggablePlumbOptions: PropTypes.shape({
-    grid: PropTypes.arrayOf(PropTypes.number)
+  draggableOptions: PropTypes.shape({
+    grid: PropTypes.arrayOf(PropTypes.number),
+    consumeStartEvent: PropTypes.bool,
+    getConstrainingRectangle: PropTypes.func,
+    containment: PropTypes.bool
+  }),
+  droppableOptions: PropTypes.shape({
+    canDrop: PropTypes.func,
+    hoverClass: PropTypes.string
   })
 };
 Edges.defaultProps = {

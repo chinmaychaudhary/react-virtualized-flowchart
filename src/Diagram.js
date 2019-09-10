@@ -420,7 +420,8 @@ class Diagram extends React.PureComponent {
         targetEndpointStyles={this.props.targetEndpointStyles}
         targetEndpointOptions={this.props.targetEndpointOptions}
         edgeStyles={this.props.edgeStyles}
-        draggablePlumbOptions={this.props.draggablePlumbOptions}
+        draggableOptions={this.props.draggableOptions}
+        droppableOptions={this.props.droppableOptions}
       />
     );
   }
@@ -456,8 +457,15 @@ Diagram.propTypes = {
       top: PropTypes.number
     })
   ),
-  draggablePlumbOptions: PropTypes.shape({
-    grid: PropTypes.arrayOf(PropTypes.number)
+  draggableOptions: PropTypes.shape({
+    grid: PropTypes.arrayOf(PropTypes.number),
+    consumeStartEvent: PropTypes.bool,
+    getConstrainingRectangle: PropTypes.func,
+    containment: PropTypes.bool
+  }),
+  droppableOptions: PropTypes.shape({
+    canDrop: PropTypes.func,
+    hoverClass: PropTypes.string
   }),
   renderBackground: PropTypes.func
 };
