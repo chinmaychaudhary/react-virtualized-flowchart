@@ -1,6 +1,6 @@
 {
   "name": "react-virtualized-flowchart",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "",
   "keywords": [],
   "main": "src/index.js",

@@ -52,11 +52,16 @@ class Edges extends PureComponent {
         ...this.props.draggableOptions,
         stop: this.handleStop
       });
-
-      this.plumbInstance.droppable(vertex.id, {
-        ...this.props.droppableOptions,
-        drop: this.handleDrop
-      });
+      if (
+        !this.plumbInstance
+          .getElement(vertex.id)
+          .classList.contains("jtk-droppable")
+      ) {
+        this.plumbInstance.droppable(vertex.id, {
+          ...this.props.droppableOptions,
+          drop: this.handleDrop
+        });
+      }
     });
   }
 
