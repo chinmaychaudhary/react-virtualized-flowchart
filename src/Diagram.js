@@ -199,8 +199,15 @@ class Diagram extends React.PureComponent {
     }
 
     if (didVerticesChange) {
+      const { itemsAdded, itemsRemoved } = getAddedOrRemovedItems(
+        prevProps.vertices,
+        this.props.vertices
+      );
+
+      itemsAdded.forEach(vertex => this.plumbInstance.revalidate(vertex.id));
+
       this.updateIntervalTrees(
-        getAddedOrRemovedItems(prevProps.vertices, this.props.vertices),
+        { itemsAdded, itemsRemoved },
         verticesToEdgesMap
       );
       shouldTriggerRender = true;
@@ -377,6 +384,10 @@ class Diagram extends React.PureComponent {
     return [sentinelX, sentinelY];
   }
 
+  registerPlumbInstance = plumbInstance => {
+    this.plumbInstance = plumbInstance;
+  };
+
   renderSentinel(x, y) {
     return (
       <div
@@ -411,6 +422,7 @@ class Diagram extends React.PureComponent {
 
     return (
       <Edges
+        registerPlumbInstance={this.registerPlumbInstance}
         onAction={this.props.onAction}
         edges={[...edgesMap.values()]}
         vertices={vertices.map(v => v.vertex)}

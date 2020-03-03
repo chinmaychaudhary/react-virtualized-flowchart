@@ -8,6 +8,7 @@ class Edges extends PureComponent {
   componentDidMount() {
     jsPlumb.ready(() => {
       this.plumbInstance = jsPlumb.getInstance(this.props.containerEl);
+      this.props.registerPlumbInstance(this.plumbInstance);
       this.plumbConnections = {};
       this.drawConnections();
       this.makeVerticesDraggable(this.props.vertices);
@@ -15,14 +16,14 @@ class Edges extends PureComponent {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.edges !== this.props.edges) {
-      this.updateConnections(
-        getAddedOrRemovedItems(prevProps.edges, this.props.edges)
-      );
-    }
     if (prevProps.vertices !== this.props.vertices) {
       this.updateVertices(
         getAddedOrRemovedItems(prevProps.vertices, this.props.vertices)
+      );
+    }
+    if (prevProps.edges !== this.props.edges) {
+      this.updateConnections(
+        getAddedOrRemovedItems(prevProps.edges, this.props.edges)
       );
     }
   }
@@ -46,8 +47,17 @@ class Edges extends PureComponent {
     });
   };
 
+  unmanageVertices(verticesRemoved, verticesUpdated) {
+    verticesRemoved.map(vertex => {
+      this.plumbInstance.unmanage(vertex.id);
+    });
+    verticesUpdated.map(vertex => {
+      this.plumbInstance.destroyDraggable(vertex.id);
+    });
+  }
+
   makeVerticesDraggable(vertices) {
-    vertices.map(vertex => {
+    vertices.forEach(vertex => {
       this.plumbInstance.draggable(vertex.id, {
         ...this.props.draggableOptions,
         stop: this.handleStop
@@ -70,7 +80,8 @@ class Edges extends PureComponent {
     this.addConnectionsAndEndpoints(itemsAdded);
   }
 
-  updateVertices({ itemsAdded, itemsRemoved }) {
+  updateVertices({ itemsAdded, itemsRemoved, itemsUpdated }) {
+    this.unmanageVertices(itemsRemoved, itemsUpdated);
     this.makeVerticesDraggable(itemsAdded);
   }
 
