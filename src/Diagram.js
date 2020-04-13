@@ -190,6 +190,13 @@ class Diagram extends React.PureComponent {
       verticesMap = this.setVertices(this.props.vertices).verticesMap;
     }
 
+    if (this.revalidateNodes) {
+      this.verticesToBeValidated.forEach(vertex =>
+        this.plumbInstance.revalidate(vertex.id)
+      );
+      this.revalidateNodes = false;
+    }
+
     if (prevProps.edges !== this.props.edges) {
       verticesToEdgesMap = this.updateEdges(
         getAddedOrRemovedItems(prevProps.edges, this.props.edges),
@@ -204,7 +211,8 @@ class Diagram extends React.PureComponent {
         this.props.vertices
       );
 
-      itemsAdded.forEach(vertex => this.plumbInstance.revalidate(vertex.id));
+      this.revalidateNodes = true;
+      this.verticesToBeValidated = itemsAdded;
 
       this.updateIntervalTrees(
         { itemsAdded, itemsRemoved },
