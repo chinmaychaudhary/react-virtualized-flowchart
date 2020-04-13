@@ -191,7 +191,7 @@ class Diagram extends React.PureComponent {
     }
 
     if (this.revalidateNodes) {
-      this.updatedVertices.forEach(vertex =>
+      this.verticesToBeValidated.forEach(vertex =>
         this.plumbInstance.revalidate(vertex.id)
       );
       this.revalidateNodes = false;
@@ -212,7 +212,7 @@ class Diagram extends React.PureComponent {
       );
 
       this.revalidateNodes = true;
-      this.updatedVertices = itemsAdded;
+      this.verticesToBeValidated = itemsAdded;
 
       this.updateIntervalTrees(
         { itemsAdded, itemsRemoved },
