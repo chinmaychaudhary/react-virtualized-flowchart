@@ -87,15 +87,19 @@ class Edges extends PureComponent {
     this.makeVerticesDraggable(itemsAdded);
   }
 
-  removeConnectionsAndEndpoints = (removedConnections = []) => {
-    removedConnections
-      .map(connection => this.plumbConnections[connection.id])
-      .forEach(connection => {
-        const connectionEndpoints = connection.endpoints;
-        this.plumbInstance.deleteConnection(connection);
-        this.plumbInstance.deleteEndpoint(connectionEndpoints[0]);
-        this.plumbInstance.deleteEndpoint(connectionEndpoints[1]);
+  removeConnectionsAndEndpoints = (removedEdges = []) => {
+    removedEdges.forEach(edge => {
+      const connection = this.plumbConnections[edge.id];
+      const connectionEndpoints = connection.endpoints;
+
+      _forEach(edge.customOverlays, customOverlay => {
+        this.deleteCustomOverlay(edge, customOverlay);
       });
+
+      this.plumbInstance.deleteConnection(connection);
+      this.plumbInstance.deleteEndpoint(connectionEndpoints[0]);
+      this.plumbInstance.deleteEndpoint(connectionEndpoints[1]);
+    });
   };
 
   addConnectionsAndEndpoints = (addedEdges = []) => {
@@ -132,6 +136,11 @@ class Edges extends PureComponent {
       this.props.renderOverlay({ edge, overlay }),
       document.getElementById(overlayId)
     );
+  }
+
+  deleteCustomOverlay(edge, overlay) {
+    const overlayId = getOverlayId(edge, overlay);
+    ReactDOM.unmountComponentAtNode(document.getElementById(overlayId));
   }
 
   drawConnections() {
