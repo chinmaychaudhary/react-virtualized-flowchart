@@ -1,8 +1,10 @@
 import React, { PureComponent } from "react";
+import ReactDOM from "react-dom";
 import PropTypes from "prop-types";
 import { jsPlumb } from "jsplumb";
+import _forEach from "lodash/forEach";
 
-import { getAddedOrRemovedItems } from "./helper";
+import { getAddedOrRemovedItems, getOverlays, getOverlayId } from "./helper";
 
 class Edges extends PureComponent {
   componentDidMount() {
@@ -85,25 +87,30 @@ class Edges extends PureComponent {
     this.makeVerticesDraggable(itemsAdded);
   }
 
-  removeConnectionsAndEndpoints = (removedConnections = []) => {
-    removedConnections
-      .map(connection => this.plumbConnections[connection.id])
-      .forEach(connection => {
-        const connectionEndpoints = connection.endpoints;
-        this.plumbInstance.deleteConnection(connection);
-        this.plumbInstance.deleteEndpoint(connectionEndpoints[0]);
-        this.plumbInstance.deleteEndpoint(connectionEndpoints[1]);
+  removeConnectionsAndEndpoints = (removedEdges = []) => {
+    removedEdges.forEach(edge => {
+      const connection = this.plumbConnections[edge.id];
+      const connectionEndpoints = connection.endpoints;
+
+      _forEach(edge.customOverlays, customOverlay => {
+        this.deleteCustomOverlay(edge, customOverlay);
       });
+
+      this.plumbInstance.deleteConnection(connection);
+      this.plumbInstance.deleteEndpoint(connectionEndpoints[0]);
+      this.plumbInstance.deleteEndpoint(connectionEndpoints[1]);
+    });
   };
 
   addConnectionsAndEndpoints = (addedEdges = []) => {
     addedEdges.forEach(edge => {
-      const sourceEndpoint = this.plumbInstance.addEndpoint(edge.sourceId, {
+      const { sourceId, targetId } = edge;
+      const sourceEndpoint = this.plumbInstance.addEndpoint(sourceId, {
           ...(edge.sourceEndpointStyles || this.props.sourceEndpointStyles),
           ...(edge.sourceEndpointOptions || this.props.sourceEndpointOptions),
           isSource: true
         }),
-        targetEndpoint = this.plumbInstance.addEndpoint(edge.targetId, {
+        targetEndpoint = this.plumbInstance.addEndpoint(targetId, {
           ...(edge.targetEndpointStyles || this.props.targetEndpointStyles),
           ...(edge.targetEndpointOptions || this.props.targetEndpointOptions),
           isTarget: true
@@ -114,10 +121,27 @@ class Edges extends PureComponent {
         ...(edge.options || this.props.edgeOptions),
         source: sourceEndpoint,
         target: targetEndpoint,
-        overlays: edge.overlays
+        overlays: getOverlays(edge)
+      });
+
+      _forEach(edge.customOverlays, customOverlay => {
+        this.renderCustomOverlay(edge, customOverlay);
       });
     });
   };
+
+  renderCustomOverlay(edge, overlay) {
+    const overlayId = getOverlayId(edge, overlay);
+    ReactDOM.render(
+      this.props.renderOverlay({ edge, overlay }),
+      document.getElementById(overlayId)
+    );
+  }
+
+  deleteCustomOverlay(edge, overlay) {
+    const overlayId = getOverlayId(edge, overlay);
+    ReactDOM.unmountComponentAtNode(document.getElementById(overlayId));
+  }
 
   drawConnections() {
     this.addConnectionsAndEndpoints(this.props.edges);
@@ -139,7 +163,8 @@ Edges.propTypes = {
   droppableOptions: PropTypes.shape({
     canDrop: PropTypes.func,
     hoverClass: PropTypes.string
-  })
+  }),
+  renderOverlay: PropTypes.func
 };
 Edges.defaultProps = {
   sourceEndpointStyles: {

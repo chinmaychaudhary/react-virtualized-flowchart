@@ -430,6 +430,7 @@ class Diagram extends React.PureComponent {
 
     return (
       <Edges
+        renderOverlay={this.props.renderOverlay}
         registerPlumbInstance={this.registerPlumbInstance}
         onAction={this.props.onAction}
         edges={[...edgesMap.values()]}
@@ -487,12 +488,16 @@ Diagram.propTypes = {
     canDrop: PropTypes.func,
     hoverClass: PropTypes.string
   }),
+  renderOverlay: PropTypes.func,
   renderBackground: PropTypes.func
 };
 
 Diagram.defaultProps = {
   edges: [],
   renderBackground() {
+    return null;
+  },
+  renderOverlay() {
     return null;
   }
 };
