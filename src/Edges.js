@@ -1,12 +1,16 @@
 import React, { PureComponent } from "react";
-import ReactDOM from "react-dom";
 import PropTypes from "prop-types";
 import { jsPlumb } from "jsplumb";
-import _forEach from "lodash/forEach";
 
-import { getAddedOrRemovedItems, getOverlays, getOverlayId } from "./helper";
+import Overlays from "./Overlays";
+
+import { getAddedOrRemovedItems, getOverlays } from "./helper";
 
 class Edges extends PureComponent {
+  state = {
+    overlayEdges: []
+  };
+
   componentDidMount() {
     jsPlumb.ready(() => {
       this.plumbInstance = jsPlumb.getInstance(this.props.containerEl);
@@ -80,6 +84,7 @@ class Edges extends PureComponent {
   updateConnections({ itemsAdded, itemsRemoved }) {
     this.removeConnectionsAndEndpoints(itemsRemoved);
     this.addConnectionsAndEndpoints(itemsAdded);
+    this.setState({ overlayEdges: this.props.edges });
   }
 
   updateVertices({ itemsAdded, itemsRemoved, itemsUpdated }) {
@@ -91,10 +96,6 @@ class Edges extends PureComponent {
     removedEdges.forEach(edge => {
       const connection = this.plumbConnections[edge.id];
       const connectionEndpoints = connection.endpoints;
-
-      _forEach(edge.customOverlays, customOverlay => {
-        this.deleteCustomOverlay(edge, customOverlay);
-      });
 
       this.plumbInstance.deleteConnection(connection);
       this.plumbInstance.deleteEndpoint(connectionEndpoints[0]);
@@ -123,32 +124,21 @@ class Edges extends PureComponent {
         target: targetEndpoint,
         overlays: getOverlays(edge)
       });
-
-      _forEach(edge.customOverlays, customOverlay => {
-        this.renderCustomOverlay(edge, customOverlay);
-      });
     });
   };
 
-  renderCustomOverlay(edge, overlay) {
-    const overlayId = getOverlayId(edge, overlay);
-    ReactDOM.render(
-      this.props.renderOverlay({ edge, overlay }),
-      document.getElementById(overlayId)
-    );
-  }
-
-  deleteCustomOverlay(edge, overlay) {
-    const overlayId = getOverlayId(edge, overlay);
-    ReactDOM.unmountComponentAtNode(document.getElementById(overlayId));
-  }
-
   drawConnections() {
     this.addConnectionsAndEndpoints(this.props.edges);
+    this.setState({ overlayEdges: this.props.edges });
   }
 
   render() {
-    return null;
+    return (
+      <Overlays
+        edges={this.state.overlayEdges}
+        renderOverlays={this.props.renderOverlays}
+      />
+    );
   }
 }
 
@@ -164,7 +154,7 @@ Edges.propTypes = {
     canDrop: PropTypes.func,
     hoverClass: PropTypes.string
   }),
-  renderOverlay: PropTypes.func
+  renderOverlays: PropTypes.func
 };
 Edges.defaultProps = {
   sourceEndpointStyles: {
