@@ -47,6 +47,16 @@ class Edges extends PureComponent {
     });
   };
 
+  handleConnectionClick = (connection, event) => {
+    event.stopPropagation();
+    this.props.onAction({
+      type: 'CONNECTION_CLICK',
+      payload: {
+        id: connection.getParameter('id'),
+      },
+    });
+  };
+
   unmanageVertices(verticesRemoved, verticesUpdated) {
     verticesRemoved.map(vertex => {
       this.plumbInstance.unmanage(vertex.id);
@@ -97,6 +107,7 @@ class Edges extends PureComponent {
   };
 
   addConnectionsAndEndpoints = (addedEdges = []) => {
+    this.plumbInstance.bind('click', this.handleConnectionClick);
     addedEdges.forEach(edge => {
       const sourceEndpoint = this.plumbInstance.addEndpoint(edge.sourceId, {
           ...(edge.sourceEndpointStyles || this.props.sourceEndpointStyles),
@@ -114,7 +125,10 @@ class Edges extends PureComponent {
         ...(edge.options || this.props.edgeOptions),
         source: sourceEndpoint,
         target: targetEndpoint,
-        overlays: edge.overlays
+        overlays: edge.overlays,
+        parameters: {
+          id: edge.id,
+        }
       });
     });
   };
