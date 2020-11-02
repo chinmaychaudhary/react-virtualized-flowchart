@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { jsPlumb } from "jsplumb";
 
 import { getAddedOrRemovedItems } from "./helper";
+import { ACTION_TYPES } from "./constants"
 
 class Edges extends PureComponent {
   componentDidMount() {
@@ -12,6 +13,7 @@ class Edges extends PureComponent {
       this.plumbConnections = {};
       this.drawConnections();
       this.makeVerticesDraggable(this.props.vertices);
+      this.plumbInstance.bind('click', this.handleConnectionClick);
     });
   }
 
@@ -30,7 +32,7 @@ class Edges extends PureComponent {
 
   handleStop = dragEndEvent => {
     this.props.onAction({
-      type: "ITEM_DRAGGED",
+      type: ACTION_TYPES.ITEM_DRAGGED,
       payload: {
         vertexEl: dragEndEvent.el,
         finalPos: dragEndEvent.finalPos
@@ -40,7 +42,7 @@ class Edges extends PureComponent {
 
   handleDrop = dropEndEvent => {
     this.props.onAction({
-      type: "ITEM_DROPPED",
+      type: ACTION_TYPES.ITEM_DROPPED,
       payload: {
         dropEndEvent
       }
@@ -50,7 +52,7 @@ class Edges extends PureComponent {
   handleConnectionClick = (connection, event) => {
     event.stopPropagation();
     this.props.onAction({
-      type: 'CONNECTION_CLICK',
+      type: ACTION_TYPES.CONNECTION_CLICK,
       payload: {
         id: connection.getParameter('id'),
       },
@@ -107,7 +109,6 @@ class Edges extends PureComponent {
   };
 
   addConnectionsAndEndpoints = (addedEdges = []) => {
-    this.plumbInstance.bind('click', this.handleConnectionClick);
     addedEdges.forEach(edge => {
       const sourceEndpoint = this.plumbInstance.addEndpoint(edge.sourceId, {
           ...(edge.sourceEndpointStyles || this.props.sourceEndpointStyles),
