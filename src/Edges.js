@@ -2,8 +2,8 @@ import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import { jsPlumb } from "jsplumb";
 
+import { ACTION_TYPES } from "./constants"
 import Overlays from "./Overlays";
-
 import { getAddedOrRemovedItems, getOverlays } from "./helper";
 
 class Edges extends PureComponent {
@@ -18,6 +18,7 @@ class Edges extends PureComponent {
       this.plumbConnections = {};
       this.drawConnections();
       this.makeVerticesDraggable(this.props.vertices);
+      this.plumbInstance.bind('click', this.handleConnectionClick);
     });
   }
 
@@ -36,7 +37,7 @@ class Edges extends PureComponent {
 
   handleStop = dragEndEvent => {
     this.props.onAction({
-      type: "ITEM_DRAGGED",
+      type: ACTION_TYPES.ITEM_DRAGGED,
       payload: {
         vertexEl: dragEndEvent.el,
         finalPos: dragEndEvent.finalPos
@@ -46,10 +47,20 @@ class Edges extends PureComponent {
 
   handleDrop = dropEndEvent => {
     this.props.onAction({
-      type: "ITEM_DROPPED",
+      type: ACTION_TYPES.ITEM_DROPPED,
       payload: {
         dropEndEvent
       }
+    });
+  };
+
+  handleConnectionClick = (connection, event) => {
+    event.stopPropagation();
+    this.props.onAction({
+      type: ACTION_TYPES.CONNECTION_CLICK,
+      payload: {
+        id: connection.getParameter('id'),
+      },
     });
   };
 
@@ -122,6 +133,9 @@ class Edges extends PureComponent {
         ...(edge.options || this.props.edgeOptions),
         source: sourceEndpoint,
         target: targetEndpoint,
+        parameters: {
+          id: edge.id,
+        }
         overlays: getOverlays(edge)
       });
     });
