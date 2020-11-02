@@ -1,17 +1,17 @@
 {
   "name": "react-virtualized-flowchart",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "description": "",
   "keywords": [],
   "main": "src/index.js",
-  "homepage": "https://chinmay17.github.io/react-virtualized-flowchart",
+  "homepage": "https://chicho17.github.io/react-virtualized-flowchart",
   "dependencies": {
     "jsplumb": "2.9.0",
     "lodash": "^4.17.15",
     "memoize-one": "^5.0.0",
     "prop-types": "^15.7.2",
-    "react": "16.8.3",
-    "react-dom": "16.8.3"
+    "react": "16.13.1",
+    "react-dom": "16.13.1"
   },
   "devDependencies": {
     "@babel/cli": "7.7.4",
@@ -27,6 +27,10 @@
     "lint-staged": "^8.1.5",
     "prettier": "^1.16.4",
     "react-scripts": "1.1.5"
+  },
+  "peerDependencies": {
+    "react": "16.13.1",
+    "react-dom": "16.13.1"
   },
   "scripts": {
     "start": "react-scripts start",
