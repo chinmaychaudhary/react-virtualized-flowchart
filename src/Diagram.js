@@ -498,7 +498,7 @@ Diagram.defaultProps = {
   renderBackground() {
     return null;
   },
-  areVerticesDraggable: true
+  areVerticesDraggable: true,
   renderOverlays() {
     return null;
   }
