@@ -443,6 +443,7 @@ class Diagram extends React.PureComponent {
         edgeStyles={this.props.edgeStyles}
         draggableOptions={this.props.draggableOptions}
         droppableOptions={this.props.droppableOptions}
+        areVerticesDraggable={this.props.areVerticesDraggable}
       />
     );
   }
@@ -497,6 +498,7 @@ Diagram.defaultProps = {
   renderBackground() {
     return null;
   },
+  areVerticesDraggable: true
   renderOverlays() {
     return null;
   }

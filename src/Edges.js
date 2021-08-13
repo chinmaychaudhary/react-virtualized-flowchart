@@ -17,7 +17,9 @@ class Edges extends PureComponent {
       this.props.registerPlumbInstance(this.plumbInstance);
       this.plumbConnections = {};
       this.drawConnections();
-      this.makeVerticesDraggable(this.props.vertices);
+      if (this.props.areVerticesDraggable) {
+        this.makeVerticesDraggable(this.props.vertices);
+      }
     });
   }
 
@@ -89,7 +91,9 @@ class Edges extends PureComponent {
 
   updateVertices({ itemsAdded, itemsRemoved, itemsUpdated }) {
     this.unmanageVertices(itemsRemoved, itemsUpdated);
-    this.makeVerticesDraggable(itemsAdded);
+    if (this.props.areVerticesDraggable) {
+      this.makeVerticesDraggable(itemsAdded);
+    }
   }
 
   removeConnectionsAndEndpoints = (removedEdges = []) => {
