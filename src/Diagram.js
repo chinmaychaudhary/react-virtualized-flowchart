@@ -116,9 +116,9 @@ function removeEdge(vToEMap, edgeId, vertexId) {
 const getViewport = memoizeOne(
   (scrollLeft, scrollTop, clientWidth, clientHeight) => ({
     xMin: 0,
-    xMax: 15000,
+    xMax: 30000,
     yMin: 0,
-    yMax: 15000
+    yMax: 30000
   })
 );
 
