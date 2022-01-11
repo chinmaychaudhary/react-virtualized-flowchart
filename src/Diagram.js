@@ -329,12 +329,46 @@ class Diagram extends React.PureComponent {
   }
 
   updateEdges({ itemsAdded, itemsRemoved }, verticesMap) {
+    const xIntervalIdToIndex = new Map(
+      this.xIntervalTree.intervals.map(([a, b, edge], index) => [
+        edge.id,
+        index
+      ])
+    );
+    const xSortedItemsToRemove = [...itemsRemoved].sort(
+      (itemA, itemB) =>
+        xIntervalIdToIndex.get(itemA.id) ??
+        0 - xIntervalIdToIndex.get(itemB.id) ??
+        0
+    );
+
+    const yIntervalIdToIndex = new Map(
+      this.yIntervalTree.intervals.map(([a, b, edge], index) => [
+        edge.id,
+        index
+      ])
+    );
+    const ySortedItemsToRemove = [...itemsRemoved].sort(
+      (itemA, itemB) =>
+        yIntervalIdToIndex.get(itemA.id) ??
+        0 - yIntervalIdToIndex.get(itemB.id) ??
+        0
+    );
+
     itemsRemoved.forEach(edge => {
-      const edgeId = edge.id;
       this.removeEdgeFromVerticesToEdgesMap(edge);
+    });
+
+    xSortedItemsToRemove.forEach(edge => {
+      const edgeId = edge.id;
       removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edgeId);
+    });
+
+    ySortedItemsToRemove.forEach(edge => {
+      const edgeId = edge.id;
       removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edgeId);
     });
+
     itemsAdded.forEach(edge => {
       this.addEdgeToVerticesToEdgesMap(edge);
       this.addToXIntervalTree(edge, verticesMap);
