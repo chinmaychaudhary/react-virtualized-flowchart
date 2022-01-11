@@ -337,8 +337,8 @@ class Diagram extends React.PureComponent {
     );
     const xSortedItemsToRemove = [...itemsRemoved].sort(
       (itemA, itemB) =>
-        xIntervalIdToIndex.get(itemA.id) ??
-        0 - xIntervalIdToIndex.get(itemB.id) ??
+        xIntervalIdToIndex.get(itemA.id) ||
+        0 - xIntervalIdToIndex.get(itemB.id) ||
         0
     );
 
@@ -350,8 +350,8 @@ class Diagram extends React.PureComponent {
     );
     const ySortedItemsToRemove = [...itemsRemoved].sort(
       (itemA, itemB) =>
-        yIntervalIdToIndex.get(itemA.id) ??
-        0 - yIntervalIdToIndex.get(itemB.id) ??
+        yIntervalIdToIndex.get(itemA.id) ||
+        0 - yIntervalIdToIndex.get(itemB.id) ||
         0
     );
 
