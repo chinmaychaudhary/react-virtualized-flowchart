@@ -337,9 +337,8 @@ class Diagram extends React.PureComponent {
     );
     const xSortedItemsToRemove = [...itemsRemoved].sort(
       (itemA, itemB) =>
-        xIntervalIdToIndex.get(itemA.id) ||
-        0 - xIntervalIdToIndex.get(itemB.id) ||
-        0
+        (xIntervalIdToIndex.get(itemA.id) || 0) -
+        (xIntervalIdToIndex.get(itemB.id) || 0)
     );
 
     const yIntervalIdToIndex = new Map(
@@ -350,9 +349,8 @@ class Diagram extends React.PureComponent {
     );
     const ySortedItemsToRemove = [...itemsRemoved].sort(
       (itemA, itemB) =>
-        yIntervalIdToIndex.get(itemA.id) ||
-        0 - yIntervalIdToIndex.get(itemB.id) ||
-        0
+        (yIntervalIdToIndex.get(itemA.id) || 0) -
+        (yIntervalIdToIndex.get(itemB.id) || 0)
     );
 
     itemsRemoved.forEach(edge => {
