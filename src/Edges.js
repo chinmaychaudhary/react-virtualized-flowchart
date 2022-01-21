@@ -93,7 +93,26 @@ class Edges extends PureComponent {
     this.unmanageVertices(itemsRemoved, itemsUpdated);
     if (this.props.areVerticesDraggable) {
       this.makeVerticesDraggable(itemsAdded);
+    } else {
+      /*
+       * plumbInstance.draggable manages vertices internally
+       * Since we cannot make a vertex draggable here, so added the following code to manage them
+       **/
+      itemsAdded.map(vertex => {
+        this.plumbInstance.manage(
+          vertex.id,
+          this.plumbInstance.getElement(vertex.id)
+        );
+      });
     }
+
+    /*
+     * plumbInstance.manage utility doesn't recalculate the offsets
+     * Whenever an element is updated forcefully from external changes, we need to recalculate
+     **/
+    itemsAdded.map(vertex => {
+      this.plumbInstance.updateOffset({ elId: vertex.id, recalc: true });
+    });
   }
 
   removeConnectionsAndEndpoints = (removedEdges = []) => {
