@@ -93,7 +93,17 @@ class Edges extends PureComponent {
     this.unmanageVertices(itemsRemoved, itemsUpdated);
     if (this.props.areVerticesDraggable) {
       this.makeVerticesDraggable(itemsAdded);
+    } else {
+      itemsAdded.map(vertex => {
+        this.plumbInstance.manage(
+          vertex.id,
+          this.plumbInstance.getElement(vertex.id)
+        );
+      });
     }
+    itemsAdded.map(vertex => {
+      this.plumbInstance.updateOffset({ elId: vertex.id, recalc: true });
+    });
   }
 
   removeConnectionsAndEndpoints = (removedEdges = []) => {
