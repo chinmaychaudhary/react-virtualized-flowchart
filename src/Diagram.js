@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import memoizeOne from "memoize-one";
 import _throttle from "lodash/throttle";
+import _merge from "lodash/merge";
 import invariant from "invariant";
 
 import createIntervalTree from "./lib/intervalTree";
@@ -487,9 +488,14 @@ class Diagram extends React.PureComponent {
     const vertices = [...visibleVerticesMap.values()];
     const [extremeX, extremeY] = this.getExtremeXAndY();
 
+    const mergedStyles = _merge(
+      { height: "100%", overflow: "auto", position: "relative" },
+      this.props.diagramContainerStyles
+    );
+
     return (
       <div
-        style={{ height: "100%", overflow: "auto", position: "relative" }}
+        style={mergedStyles}
         ref={this.containerRef}
         className="diagramContainer"
         onScroll={this.handleScroll}
