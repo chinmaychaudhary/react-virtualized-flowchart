@@ -10,6 +10,10 @@ import Edges from "./Edges";
 import { getAddedOrRemovedItems } from "./helper";
 
 const MARGIN = 100;
+const DEFAULT_CONTAINER_RECT = {
+  width: 0,
+  height: 0
+};
 
 function getXUpper(vertex) {
   return (vertex.left || 0) + (vertex.width || 0);
@@ -157,27 +161,17 @@ class Diagram extends React.PureComponent {
         left: 0,
         top: 0
       },
-      container: {
-        height: 0,
-        width: 0
-      },
       version: 0,
       isContainerElReady: false
     };
-    this.containerRef = React.createRef();
+    this.containerRef = this.props.containerRef ?? React.createRef();
     const { verticesMap } = this.setVertices(props.vertices);
     this.initVerticesToEdgesMap(props.edges);
     this.initIntervalTrees(props.edges, verticesMap);
   }
 
   componentDidMount() {
-    const { height, width } = this.containerRef.current.getBoundingClientRect();
-
     this.setState({
-      container: {
-        height,
-        width
-      },
       isContainerElReady: true
     });
   }
@@ -394,10 +388,19 @@ class Diagram extends React.PureComponent {
   };
 
   getVisibleEdges() {
-    const { scroll, container, version } = this.state;
+    const { scroll, version } = this.state;
+    const { width, height } =
+      this.containerRef.current?.getBoundingClientRect() ??
+      DEFAULT_CONTAINER_RECT;
+
+    const scale = 1 / (this.props.zoom ?? 1);
+    const scrollLeft = scroll.left * scale;
+    const scrollTop = scroll.top * scale;
+    const containerWidth = width * scale;
+    const containerHeight = height * scale;
 
     return getVisibleEdges(
-      getViewport(scroll.left, scroll.top, container.width, container.height),
+      getViewport(scrollLeft, scrollTop, containerWidth, containerHeight),
       this.xIntervalTree,
       this.yIntervalTree,
       version
@@ -481,6 +484,17 @@ class Diagram extends React.PureComponent {
     );
   }
 
+  renderChildren(edges, vertices, extremeX, extremeY) {
+    return (
+      <>
+        {this.renderVertices(vertices)}
+        {this.renderEdges(edges, vertices)}
+        {this.renderSentinel(extremeX, extremeY)}
+        {this.renderBackground(extremeX, extremeY)}
+      </>
+    );
+  }
+
   render() {
     const visibleVerticesMap = this.getVisibleVertices();
     const edges = this.getVisibleEdges();
@@ -493,6 +507,25 @@ class Diagram extends React.PureComponent {
       this.props.diagramContainerStyles
     );
 
+    if (!this.props.disableZoom) {
+      return (
+        <div
+          style={{
+            height: "100%",
+            width: "100%",
+            overflow: "auto"
+          }}
+          onScroll={this.handleScroll}
+          ref={this.props.combinedRef}
+          {...this.props.panZoomHandlers}
+        >
+          <div style={mergedStyles} className="diagramContainer">
+            {this.renderChildren(edges, vertices, extremeX, extremeY)}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         style={mergedStyles}
@@ -500,10 +533,7 @@ class Diagram extends React.PureComponent {
         className="diagramContainer"
         onScroll={this.handleScroll}
       >
-        {this.renderVertices(vertices)}
-        {this.renderEdges(edges, vertices)}
-        {this.renderSentinel(extremeX, extremeY)}
-        {this.renderBackground(extremeX, extremeY)}
+        {this.renderChildren(edges, vertices, extremeX, extremeY)}
       </div>
     );
   }
