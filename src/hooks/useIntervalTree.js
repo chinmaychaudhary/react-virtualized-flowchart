@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import invariant from "invariant";
+import useFirstMountState from "react-use/lib/useFirstMountState";
 
 import createIntervalTree from "../lib/intervalTree";
 
@@ -53,6 +54,7 @@ const addEdge = (vToEMap, edge, vertexId) => {
 };
 
 const useIntervalTree = (edges, verticesMap) => {
+  const isFirstMount = useFirstMountState();
   const xIntervalTreeRef = useRef(createIntervalTree());
   const xIntervalTreeNodesRef = useRef({});
   const yIntervalTreeRef = useRef(createIntervalTree());
@@ -100,8 +102,10 @@ const useIntervalTree = (edges, verticesMap) => {
     yIntervalTreeRef.current.insert(interval);
   };
 
-  edges.forEach(edge => addToXIntervalTree(edge, verticesMap));
-  edges.forEach(edge => addToYIntervalTree(edge, verticesMap));
+  if (isFirstMount) {
+    edges.forEach(edge => addToXIntervalTree(edge, verticesMap));
+    edges.forEach(edge => addToYIntervalTree(edge, verticesMap));
+  }
 
   const updateIntervalTrees = (
     { itemsAdded, itemsRemoved },
