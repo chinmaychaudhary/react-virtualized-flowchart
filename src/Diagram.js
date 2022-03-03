@@ -1,27 +1,37 @@
-import React from "react";
+import * as React from "react";
+import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import memoizeOne from "memoize-one";
 import _throttle from "lodash/throttle";
 import _merge from "lodash/merge";
-import invariant from "invariant";
+import usePrevious from "react-use/lib/usePrevious";
 
-import createIntervalTree from "./lib/intervalTree";
 import Edges from "./Edges";
 import { getAddedOrRemovedItems } from "./helper";
+import useIntervalTree from "./hooks/useIntervalTree";
+import useEdgesAndVertices from "./hooks/useEdgesAndVertices";
 
 const MARGIN = 100;
 const DEFAULT_CONTAINER_RECT = {
   width: 0,
   height: 0
 };
+const DEFAULT_STATE = {
+  scroll: {
+    left: 0,
+    top: 0
+  },
+  version: 0,
+  isContainerElReady: false
+};
 
-function getXUpper(vertex) {
+const getXUpper = vertex => {
   return (vertex.left || 0) + (vertex.width || 0);
-}
+};
 
-function getYUpper(vertex) {
+const getYUpper = vertex => {
   return (vertex.top || 0) + (vertex.height || 0);
-}
+};
 
 const getExtremeVertices = memoizeOne(vertices => {
   return vertices.reduce(
@@ -43,11 +53,7 @@ const getExtremeVertices = memoizeOne(vertices => {
   );
 });
 
-function getVerticesMap(vertices) {
-  return new Map(vertices.map((v, index) => [v.id, { vertex: v, index }]));
-}
-
-const getVisibleVertices = memoizeOne(
+const getVisibleVerticesHelper = memoizeOne(
   (universalVerticesMap, visibleEdgesMap, version) => {
     const visibleVertices = new Map();
     visibleEdgesMap.forEach(edge => {
@@ -65,7 +71,7 @@ const getVisibleVertices = memoizeOne(
   }
 );
 
-const getVisibleEdges = memoizeOne(
+const getVisibleEdgesHelper = memoizeOne(
   (viewport, xIntervalTree, yIntervalTree, version) => {
     const xEdgesMap = new Map();
     const yEdgesMap = new Map();
@@ -95,29 +101,6 @@ const getVisibleEdges = memoizeOne(
   }
 );
 
-function addEdge(vToEMap, edge, vertexId) {
-  let sourceVertexEdgeList = vToEMap.get(vertexId);
-  if (sourceVertexEdgeList) {
-    sourceVertexEdgeList.push(edge);
-  } else {
-    vToEMap.set(vertexId, [edge]);
-  }
-}
-
-function removeEdge(vToEMap, edgeId, vertexId) {
-  let sourceVertexEdgeList = vToEMap.get(vertexId);
-  if (sourceVertexEdgeList) {
-    sourceVertexEdgeList = sourceVertexEdgeList.filter(
-      presentEdge => presentEdge.id !== edgeId
-    );
-  }
-  if (!sourceVertexEdgeList || !sourceVertexEdgeList.length) {
-    vToEMap.delete(vertexId);
-  } else {
-    vToEMap.set(vertexId, sourceVertexEdgeList);
-  }
-}
-
 const getViewport = memoizeOne(
   (scrollLeft, scrollTop, clientWidth, clientHeight) => ({
     xMin: scrollLeft,
@@ -127,312 +110,145 @@ const getViewport = memoizeOne(
   })
 );
 
-function removeNode(intervalTree, intervalTreeNodes, nodeId) {
-  if (!intervalTreeNodes[nodeId]) {
-    return;
-  }
-  intervalTree.remove(intervalTreeNodes[nodeId]);
-  delete intervalTreeNodes[nodeId];
-}
+const Diagram = props => {
+  const prevEdges = usePrevious(props.edges);
+  const prevVertices = usePrevious(props.vertices);
 
-function makeXIntervalForEdge(edge, v1, v2) {
-  const x1 = Math.min(v1.left, v2.left) || 0;
-  const x2 = Math.max(
-    (v1.left || 0) + (v1.width || 0),
-    (v2.left || 0) + (v2.width || 0)
-  );
-  return [x1, x2, edge];
-}
+  const [state, setState] = useState(DEFAULT_STATE);
+  const containerRef = useRef();
 
-function makeYIntervalForEdge(edge, v1, v2) {
-  const y1 = Math.min(v1.top, v2.top) || 0;
-  const y2 = Math.max(
-    (v1.top || 0) + (v1.height || 0),
-    (v2.top || 0) + (v2.height || 0)
-  );
-  return [y1, y2, edge];
-}
+  const {
+    vertices,
+    verticesMapRef,
+    verticesToEdgesMapRef,
+    setVertices
+  } = useEdgesAndVertices(props.edges, props.vertices);
+  const verticesMap = verticesMapRef.current;
+  const verticesToEdgesMap = verticesToEdgesMapRef.current;
 
-class Diagram extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      scroll: {
-        left: 0,
-        top: 0
-      },
-      version: 0,
-      isContainerElReady: false
-    };
-    this.containerRef = this.props.containerRef ?? React.createRef();
-    const { verticesMap } = this.setVertices(props.vertices);
-    this.initVerticesToEdgesMap(props.edges);
-    this.initIntervalTrees(props.edges, verticesMap);
-  }
+  const {
+    xIntervalTree,
+    yIntervalTree,
+    updateIntervalTrees,
+    updateEdges
+  } = useIntervalTree(props.edges, verticesMap);
 
-  componentDidMount() {
-    this.setState({
-      isContainerElReady: true
-    });
-  }
+  const plumbInstanceRef = useRef();
+  const validateNodesRef = useRef({
+    revalidateNodes: false,
+    verticesToBeValidated: []
+  });
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
+  useEffect(() => {
+    setState(prevState => ({ ...prevState, isContainerElReady: true }));
+  }, []);
+
+  useEffect(() => {
     let shouldTriggerRender = false;
-    const didVerticesChange = prevProps.vertices !== this.props.vertices;
-    let { verticesMap, verticesToEdgesMap } = this;
+    const didVerticesChange = prevVertices && prevVertices !== props.vertices;
 
     if (didVerticesChange) {
-      verticesMap = this.setVertices(this.props.vertices).verticesMap;
+      verticesMapRef.current = setVertices(props.vertices).verticesMap;
     }
 
-    if (this.revalidateNodes) {
-      this.verticesToBeValidated.forEach(vertex =>
-        this.plumbInstance.revalidate(vertex.id)
+    if (validateNodesRef.current.revalidateNodes) {
+      validateNodesRef.current.verticesToBeValidated.forEach(vertex =>
+        plumbInstanceRef.current.revalidate(vertex.id)
       );
-      this.revalidateNodes = false;
+      validateNodesRef.current = {
+        revalidateNodes: false
+      };
     }
 
-    if (prevProps.edges !== this.props.edges) {
-      verticesToEdgesMap = this.updateEdges(
-        getAddedOrRemovedItems(prevProps.edges, this.props.edges),
-        verticesMap
+    if (prevEdges && prevEdges !== props.edges) {
+      verticesToEdgesMapRef.current = updateEdges(
+        getAddedOrRemovedItems(prevEdges, props.edges),
+        verticesMap,
+        verticesToEdgesMap
       ).verticesToEdgesMap;
       shouldTriggerRender = true;
     }
 
     if (didVerticesChange) {
       const { itemsAdded, itemsRemoved } = getAddedOrRemovedItems(
-        prevProps.vertices,
-        this.props.vertices
+        prevVertices,
+        props.vertices
       );
 
-      this.revalidateNodes = true;
-      this.verticesToBeValidated = itemsAdded;
+      validateNodesRef.current = {
+        revalidateNodes: true,
+        verticesToBeValidated: itemsAdded
+      };
 
-      this.updateIntervalTrees(
+      updateIntervalTrees(
         { itemsAdded, itemsRemoved },
+        verticesMap,
         verticesToEdgesMap
       );
       shouldTriggerRender = true;
     }
 
     if (shouldTriggerRender) {
-      this.setState(({ version }) => ({ version: version + 1 }));
+      setState(prevState => ({ ...prevState, version: prevState.version + 1 }));
     }
-  }
+  });
 
-  setVertices(vertices) {
-    this.vertices = vertices;
-    this.verticesMap = getVerticesMap(vertices);
-    return { vertices: this.vertices, verticesMap: this.verticesMap };
-  }
-
-  addToXIntervalTree = (edge, verticesMap) => {
-    const edgeId = edge.id;
-    if (this.xIntervalTreeNodes[edgeId]) {
-      return;
-    }
-
-    const sourceVertex = verticesMap.get(edge.sourceId);
-    invariant(sourceVertex, `sourceVertex missing for the edgeId - ${edgeId}`);
-    const targetVertex = verticesMap.get(edge.targetId);
-    invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
-
-    const interval = makeXIntervalForEdge(
-      edge,
-      sourceVertex.vertex,
-      targetVertex.vertex
-    );
-    this.xIntervalTreeNodes[edgeId] = interval;
-    this.xIntervalTree.insert(interval);
-  };
-
-  addToYIntervalTree = (edge, verticesMap) => {
-    const edgeId = edge.id;
-
-    if (this.yIntervalTreeNodes[edgeId]) {
-      return;
-    }
-
-    const sourceVertex = verticesMap.get(edge.sourceId);
-    invariant(sourceVertex, `sourceVertex missing for the edgeId - ${edgeId}`);
-    const targetVertex = verticesMap.get(edge.targetId);
-    invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
-
-    const interval = makeYIntervalForEdge(
-      edge,
-      sourceVertex.vertex,
-      targetVertex.vertex
-    );
-
-    this.yIntervalTreeNodes[edgeId] = interval;
-    this.yIntervalTree.insert(interval);
-  };
-
-  initIntervalTrees(edges, verticesMap) {
-    this.initXIntervalTree(edges, verticesMap);
-    this.initYIntervalTree(edges, verticesMap);
-  }
-
-  initVerticesToEdgesMap(edges) {
-    this.verticesToEdgesMap = edges.reduce((vToEMap, edge) => {
-      addEdge(vToEMap, edge, edge.sourceId);
-      addEdge(vToEMap, edge, edge.targetId);
-      return vToEMap;
-    }, new Map());
-  }
-
-  addEdgeToVerticesToEdgesMap = edge => {
-    addEdge(this.verticesToEdgesMap, edge, edge.sourceId);
-    addEdge(this.verticesToEdgesMap, edge, edge.targetId);
-  };
-
-  removeEdgeFromVerticesToEdgesMap = edge => {
-    removeEdge(this.verticesToEdgesMap, edge.id, edge.sourceId);
-    removeEdge(this.verticesToEdgesMap, edge.id, edge.targetId);
-  };
-
-  initXIntervalTree(edges, verticesMap) {
-    this.xIntervalTree = createIntervalTree();
-    this.xIntervalTreeNodes = {};
-    edges.forEach(edge => this.addToXIntervalTree(edge, verticesMap));
-  }
-
-  initYIntervalTree(edges, verticesMap) {
-    this.yIntervalTree = createIntervalTree();
-    this.yIntervalTreeNodes = {};
-    edges.forEach(edge => this.addToYIntervalTree(edge, verticesMap));
-  }
-
-  updateIntervalTrees({ itemsAdded, itemsRemoved }, verticesToEdgesMap) {
-    itemsRemoved.forEach(vertex => {
-      const vertexId = vertex.id;
-      const edges = verticesToEdgesMap.get(vertexId) || [];
-      edges.forEach(edge => {
-        removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edge.id);
-        removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edge.id);
-      });
-    });
-    itemsAdded.forEach(vertex => {
-      const edges = verticesToEdgesMap.get(vertex.id);
-      const { verticesMap } = this;
-      edges.forEach(edge => {
-        this.addToXIntervalTree(edge, verticesMap);
-        this.addToYIntervalTree(edge, verticesMap);
-      });
-    });
-  }
-
-  updateEdges({ itemsAdded, itemsRemoved }, verticesMap) {
-    const xIntervalIdToIndex = new Map(
-      this.xIntervalTree.intervals.map(([a, b, edge], index) => [
-        edge.id,
-        index
-      ])
-    );
-    const xSortedItemsToRemove = [...itemsRemoved].sort(
-      (itemA, itemB) =>
-        (xIntervalIdToIndex.get(itemA.id) || 0) -
-        (xIntervalIdToIndex.get(itemB.id) || 0)
-    );
-
-    const yIntervalIdToIndex = new Map(
-      this.yIntervalTree.intervals.map(([a, b, edge], index) => [
-        edge.id,
-        index
-      ])
-    );
-    const ySortedItemsToRemove = [...itemsRemoved].sort(
-      (itemA, itemB) =>
-        (yIntervalIdToIndex.get(itemA.id) || 0) -
-        (yIntervalIdToIndex.get(itemB.id) || 0)
-    );
-
-    itemsRemoved.forEach(edge => {
-      this.removeEdgeFromVerticesToEdgesMap(edge);
-    });
-
-    xSortedItemsToRemove.forEach(edge => {
-      const edgeId = edge.id;
-      removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edgeId);
-    });
-
-    ySortedItemsToRemove.forEach(edge => {
-      const edgeId = edge.id;
-      removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edgeId);
-    });
-
-    itemsAdded.forEach(edge => {
-      this.addEdgeToVerticesToEdgesMap(edge);
-      this.addToXIntervalTree(edge, verticesMap);
-      this.addToYIntervalTree(edge, verticesMap);
-    });
-
-    return { verticesToEdgesMap: this.verticesToEdgesMap };
-  }
-
-  updateScroll = _throttle(target => {
-    this.setState({
+  const updateScroll = _throttle(target => {
+    setState(prevState => ({
+      ...prevState,
       scroll: {
         left: target.scrollLeft,
         top: target.scrollTop
       }
-    });
+    }));
   }, 0);
 
-  handleScroll = e => {
+  const handleScroll = e => {
     if (e.target !== e.currentTarget) {
       return;
     }
-    this.updateScroll(e.currentTarget);
+    updateScroll(e.currentTarget);
   };
 
-  getVisibleEdges() {
-    const { scroll, version } = this.state;
+  const getVisibleEdges = () => {
+    const { scroll, version } = state;
     const { width, height } =
-      this.containerRef.current?.getBoundingClientRect() ??
-      DEFAULT_CONTAINER_RECT;
+      containerRef.current?.getBoundingClientRect() ?? DEFAULT_CONTAINER_RECT;
 
-    const scale = 1 / (this.props.zoom ?? 1);
+    const scale = 1 / (props.zoom || 1);
     const scrollLeft = scroll.left * scale;
     const scrollTop = scroll.top * scale;
     const containerWidth = width * scale;
     const containerHeight = height * scale;
 
-    return getVisibleEdges(
+    return getVisibleEdgesHelper(
       getViewport(scrollLeft, scrollTop, containerWidth, containerHeight),
-      this.xIntervalTree,
-      this.yIntervalTree,
+      xIntervalTree,
+      yIntervalTree,
       version
     );
-  }
+  };
 
-  getVisibleVertices() {
-    const { version } = this.state;
+  const getVisibleVertices = () => {
+    const { version } = state;
 
-    return getVisibleVertices(
-      this.verticesMap,
-      this.getVisibleEdges(),
-      version
-    );
-  }
+    return getVisibleVerticesHelper(verticesMap, getVisibleEdges(), version);
+  };
 
-  getExtremeXAndY() {
-    const { rightMostVertex, bottomMostVertex } = getExtremeVertices(
-      this.vertices
-    );
+  const getExtremeXAndY = () => {
+    const { rightMostVertex, bottomMostVertex } = getExtremeVertices(vertices);
 
     const sentinelX = getXUpper(rightMostVertex) + MARGIN;
     const sentinelY = getYUpper(bottomMostVertex) + MARGIN;
 
     return [sentinelX, sentinelY];
-  }
-
-  registerPlumbInstance = plumbInstance => {
-    this.plumbInstance = plumbInstance;
   };
 
-  renderSentinel(x, y) {
+  const registerPlumbInstance = plumbInstance => {
+    plumbInstanceRef.current = plumbInstance;
+  };
+
+  const renderSentinel = (x, y) => {
     return (
       <div
         style={{
@@ -445,99 +261,97 @@ class Diagram extends React.PureComponent {
         }}
       />
     );
-  }
+  };
 
-  renderBackground(x, y) {
-    return this.props.renderBackground(x, y);
-  }
+  const renderBackground = (x, y) => {
+    return props.renderBackground(x, y);
+  };
 
-  renderVertices(vertices) {
+  const renderVertices = vertices => {
     return vertices.map(({ vertex, index }) => (
       <React.Fragment key={vertex.id}>
-        {this.props.renderVertex({ vertex, index })}
+        {props.renderVertex({ vertex, index })}
       </React.Fragment>
     ));
-  }
+  };
 
-  renderEdges(edgesMap, vertices) {
-    if (!this.state.isContainerElReady) {
+  const renderEdges = (edgesMap, vertices) => {
+    if (!state.isContainerElReady) {
       return null;
     }
 
     return (
       <Edges
-        renderOverlays={this.props.renderOverlays}
-        registerPlumbInstance={this.registerPlumbInstance}
-        onAction={this.props.onAction}
+        renderOverlays={props.renderOverlays}
+        registerPlumbInstance={registerPlumbInstance}
+        onAction={props.onAction}
         edges={[...edgesMap.values()]}
         vertices={vertices.map(v => v.vertex)}
-        containerEl={this.containerRef.current}
-        sourceEndpointStyles={this.props.sourceEndpointStyles}
-        sourceEndpointOptions={this.props.sourceEndpointOptions}
-        targetEndpointStyles={this.props.targetEndpointStyles}
-        targetEndpointOptions={this.props.targetEndpointOptions}
-        edgeStyles={this.props.edgeStyles}
-        draggableOptions={this.props.draggableOptions}
-        droppableOptions={this.props.droppableOptions}
-        areVerticesDraggable={this.props.areVerticesDraggable}
+        containerEl={containerRef.current}
+        sourceEndpointStyles={props.sourceEndpointStyles}
+        sourceEndpointOptions={props.sourceEndpointOptions}
+        targetEndpointStyles={props.targetEndpointStyles}
+        targetEndpointOptions={props.targetEndpointOptions}
+        edgeStyles={props.edgeStyles}
+        draggableOptions={props.draggableOptions}
+        droppableOptions={props.droppableOptions}
+        areVerticesDraggable={props.areVerticesDraggable}
       />
     );
-  }
+  };
 
-  renderChildren(edges, vertices, extremeX, extremeY) {
+  const renderChildren = (edges, vertices, extremeX, extremeY) => {
     return (
       <>
-        {this.renderVertices(vertices)}
-        {this.renderEdges(edges, vertices)}
-        {this.renderSentinel(extremeX, extremeY)}
-        {this.renderBackground(extremeX, extremeY)}
+        {renderVertices(vertices)}
+        {renderEdges(edges, vertices)}
+        {renderSentinel(extremeX, extremeY)}
+        {renderBackground(extremeX, extremeY)}
       </>
     );
-  }
+  };
 
-  render() {
-    const visibleVerticesMap = this.getVisibleVertices();
-    const edges = this.getVisibleEdges();
+  const visibleVerticesMap = getVisibleVertices();
+  const edges = getVisibleEdges();
 
-    const vertices = [...visibleVerticesMap.values()];
-    const [extremeX, extremeY] = this.getExtremeXAndY();
+  const visibleVertices = [...visibleVerticesMap.values()];
+  const [extremeX, extremeY] = getExtremeXAndY();
 
-    const mergedStyles = _merge(
-      { height: "100%", overflow: "auto", position: "relative" },
-      this.props.diagramContainerStyles
-    );
-
-    if (!this.props.disableZoom) {
-      return (
-        <div
-          style={{
-            height: "100%",
-            width: "100%",
-            overflow: "auto"
-          }}
-          onScroll={this.handleScroll}
-          ref={this.props.combinedRef}
-          {...this.props.panZoomHandlers}
-        >
-          <div style={mergedStyles} className="diagramContainer">
-            {this.renderChildren(edges, vertices, extremeX, extremeY)}
-          </div>
-        </div>
-      );
-    }
-
+  const mergedStyles = _merge(
+    { height: "100%", overflow: "auto", position: "relative" },
+    props.diagramContainerStyles
+  );
+  debugger;
+  if (props.enableZoom) {
     return (
       <div
-        style={mergedStyles}
-        ref={this.containerRef}
-        className="diagramContainer"
-        onScroll={this.handleScroll}
+        style={{
+          height: "100%",
+          width: "100%",
+          overflow: "auto"
+        }}
+        onScroll={handleScroll}
+        ref={props.combinedRef}
+        {...props.panZoomHandlers}
       >
-        {this.renderChildren(edges, vertices, extremeX, extremeY)}
+        <div style={mergedStyles} className="diagramContainer">
+          {renderChildren(edges, visibleVertices, extremeX, extremeY)}
+        </div>
       </div>
     );
   }
-}
+
+  return (
+    <div
+      style={mergedStyles}
+      ref={containerRef}
+      className="diagramContainer"
+      onScroll={handleScroll}
+    >
+      {renderChildren(edges, visibleVertices, extremeX, extremeY)}
+    </div>
+  );
+};
 
 Diagram.propTypes = {
   vertices: PropTypes.arrayOf(
@@ -557,12 +371,14 @@ Diagram.propTypes = {
     canDrop: PropTypes.func,
     hoverClass: PropTypes.string
   }),
+  enableZoom: PropTypes.bool,
   renderOverlays: PropTypes.func,
   renderBackground: PropTypes.func
 };
 
 Diagram.defaultProps = {
   edges: [],
+  enableZoom: false,
   renderBackground() {
     return null;
   },
