@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import invariant from "invariant";
-import useFirstMountState from "react-use/lib/useFirstMountState";
+import { useFirstMountState } from "react-use/lib/useFirstMountState";
 
 import createIntervalTree from "../lib/intervalTree";
 

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useCallback } from "react";
 import usePanZoom from "use-pan-and-zoom";
 

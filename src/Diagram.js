@@ -124,15 +124,13 @@ const Diagram = props => {
     verticesToEdgesMapRef,
     setVertices
   } = useEdgesAndVertices(props.edges, props.vertices);
-  const verticesMap = verticesMapRef.current;
-  const verticesToEdgesMap = verticesToEdgesMapRef.current;
 
   const {
     xIntervalTree,
     yIntervalTree,
     updateIntervalTrees,
     updateEdges
-  } = useIntervalTree(props.edges, verticesMap);
+  } = useIntervalTree(props.edges, verticesMapRef.current);
 
   const plumbInstanceRef = useRef();
   const validateNodesRef = useRef({
@@ -164,8 +162,8 @@ const Diagram = props => {
     if (prevEdges && prevEdges !== props.edges) {
       verticesToEdgesMapRef.current = updateEdges(
         getAddedOrRemovedItems(prevEdges, props.edges),
-        verticesMap,
-        verticesToEdgesMap
+        verticesMapRef.current,
+        verticesToEdgesMapRef.current
       ).verticesToEdgesMap;
       shouldTriggerRender = true;
     }
@@ -183,8 +181,8 @@ const Diagram = props => {
 
       updateIntervalTrees(
         { itemsAdded, itemsRemoved },
-        verticesMap,
-        verticesToEdgesMap
+        verticesMapRef.current,
+        verticesToEdgesMapRef.current
       );
       shouldTriggerRender = true;
     }
@@ -233,7 +231,11 @@ const Diagram = props => {
   const getVisibleVertices = () => {
     const { version } = state;
 
-    return getVisibleVerticesHelper(verticesMap, getVisibleEdges(), version);
+    return getVisibleVerticesHelper(
+      verticesMapRef.current,
+      getVisibleEdges(),
+      version
+    );
   };
 
   const getExtremeXAndY = () => {
