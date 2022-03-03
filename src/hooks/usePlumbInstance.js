@@ -135,7 +135,7 @@ const usePlumbInstance = props => {
   useEffect(() => {
     jsPlumb.ready(() => {
       plumbInstanceRef.current = jsPlumb.getInstance(props.containerEl);
-      props.registerPlumbInstance(plumbInstance);
+      props.plumbInstanceRef.current = plumbInstance;
       plumbConnectionsRef.current = {};
       drawConnections();
       if (props.areVerticesDraggable) {
