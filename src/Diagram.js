@@ -7,6 +7,7 @@ import _merge from "lodash/merge";
 import usePrevious from "react-use/lib/usePrevious";
 
 import Edges from "./Edges";
+import PanAndZoomContainer from "./PanAndZoomContainer";
 import { getAddedOrRemovedItems } from "./helper";
 import useIntervalTree from "./hooks/useIntervalTree";
 import useEdgesAndVertices from "./hooks/useEdgesAndVertices";
@@ -320,20 +321,17 @@ const Diagram = props => {
 
   if (props.enableZoom) {
     return (
-      <div
-        style={{
-          height: "100%",
-          width: "100%",
-          overflow: "auto"
-        }}
-        onScroll={handleScroll}
-        ref={props.combinedRef}
-        {...props.panZoomHandlers}
+      <PanAndZoomContainer
+        handleScroll={handleScroll}
+        containerRef={containerRef}
+        renderPanAndZoomControls={props.renderPanAndZoomControls}
       >
-        <div style={mergedStyles} className="diagramContainer">
-          {renderChildren(edges, visibleVertices, extremeX, extremeY)}
-        </div>
-      </div>
+        {({ transform }) => (
+          <div style={{ transform }} className="diagramContainer">
+            {renderChildren(edges, visibleVertices, extremeX, extremeY)}
+          </div>
+        )}
+      </PanAndZoomContainer>
     );
   }
 
