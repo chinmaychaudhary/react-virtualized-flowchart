@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import usePanZoom from "use-pan-and-zoom";
 
 import PanAndZoomControls from "./PanAndZoomControls";
@@ -17,18 +17,23 @@ const DIMENSIONS_STYLES = {
   width: "100%"
 };
 
+let change = 0;
 const PanAndZoomContainer = ({
   children,
   handleScroll,
   containerRef,
-  renderPanAndZoomControls
+  renderPanAndZoomControls,
+  scroll
 }) => {
+  const previousZoom = useRef(1);
+  const diagramContainerRef = useRef();
   const {
     transform,
     panZoomHandlers,
     setContainer,
     zoom,
-    setZoom
+    setZoom,
+    pan
   } = usePanZoom({
     enablePan: false,
     disableWheel: true,
@@ -39,11 +44,13 @@ const PanAndZoomContainer = ({
   const incrementZoom = useCallback(() => {
     const incrementedZoom = Math.floor(zoom / STEP_SIZE + 1) * STEP_SIZE;
     setZoom(incrementedZoom, CENTER);
+    change = 1;
   }, [zoom, setZoom]);
 
   const decrementZoom = useCallback(() => {
     const decrementedZoom = Math.floor((zoom - 0.01) / STEP_SIZE) * STEP_SIZE;
     setZoom(decrementedZoom, CENTER);
+    change = -1;
   }, [zoom, setZoom]);
 
   const resetZoom = useCallback(() => {
@@ -58,6 +65,18 @@ const PanAndZoomContainer = ({
     [setContainer]
   );
 
+  useEffect(() => {
+    containerRef.current.scrollBy({
+      left: scroll.left * Math.abs(zoom - previousZoom.current) * change,
+      top: scroll.top * Math.abs(zoom - previousZoom.current) * change
+    });
+    setTimeout(() => {
+      diagramContainerRef.current.style.transform = transform;
+    }, 0);
+
+    previousZoom.current = zoom;
+  }, [zoom]);
+
   return (
     <div style={{ ...DIMENSIONS_STYLES, position: "relative" }}>
       <div style={DIMENSIONS_STYLES} className="flowchartContainer">
@@ -68,11 +87,11 @@ const PanAndZoomContainer = ({
           {...panZoomHandlers}
         >
           <div
+            ref={diagramContainerRef}
             style={{
               ...DIMENSIONS_STYLES,
               overflow: "visible",
-              position: "relative",
-              transform
+              position: "relative"
             }}
             className="diagramContainer"
           >
