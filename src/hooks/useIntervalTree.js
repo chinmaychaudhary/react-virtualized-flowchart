@@ -52,20 +52,15 @@ const addEdge = (vToEMap, edge, vertexId) => {
   }
 };
 
-const useIntervalTree = (edges, verticesMap, isXIntervalTree) => {
+const useIntervalTree = (edges, verticesMap) => {
   const xIntervalTreeRef = useRef(createIntervalTree());
   const xIntervalTreeNodesRef = useRef({});
   const yIntervalTreeRef = useRef(createIntervalTree());
   const yIntervalTreeNodesRef = useRef({});
 
-  const xIntervalTree = xIntervalTreeRef.current;
-  const xIntervalTreeNodes = xIntervalTreeNodesRef.current;
-  const yIntervalTree = yIntervalTreeRef.current;
-  const yIntervalTreeNodes = yIntervalTreeNodesRef.current;
-
   const addToXIntervalTree = (edge, verticesMap) => {
     const edgeId = edge.id;
-    if (xIntervalTreeNodes[edgeId]) {
+    if (xIntervalTreeNodesRef.current[edgeId]) {
       return;
     }
 
@@ -77,17 +72,16 @@ const useIntervalTree = (edges, verticesMap, isXIntervalTree) => {
     const interval = makeXIntervalForEdge(
       edge,
       sourceVertex.vertex,
-      targetVertex.vertex,
-      isXIntervalTree
+      targetVertex.vertex
     );
+
     xIntervalTreeNodesRef.current[edgeId] = interval;
     xIntervalTreeRef.current.insert(interval);
   };
 
   const addToYIntervalTree = (edge, verticesMap) => {
     const edgeId = edge.id;
-
-    if (yIntervalTreeNodes[edgeId]) {
+    if (yIntervalTreeNodesRef.current[edgeId]) {
       return;
     }
 
@@ -118,8 +112,16 @@ const useIntervalTree = (edges, verticesMap, isXIntervalTree) => {
       const vertexId = vertex.id;
       const edges = verticesToEdgesMap.get(vertexId) || [];
       edges.forEach(edge => {
-        removeNode(xIntervalTree, xIntervalTreeNodes, edge.id);
-        removeNode(yIntervalTree, yIntervalTreeNodes, edge.id);
+        removeNode(
+          xIntervalTreeRef.current,
+          xIntervalTreeNodesRef.current,
+          edge.id
+        );
+        removeNode(
+          yIntervalTreeRef.current,
+          yIntervalTreeNodesRef.current,
+          edge.id
+        );
       });
     });
     itemsAdded.forEach(vertex => {
@@ -148,7 +150,10 @@ const useIntervalTree = (edges, verticesMap, isXIntervalTree) => {
     verticesToEdgesMap
   ) => {
     const xIntervalIdToIndex = new Map(
-      xIntervalTree.intervals.map(([a, b, edge], index) => [edge.id, index])
+      xIntervalTreeRef.current.intervals.map(([a, b, edge], index) => [
+        edge.id,
+        index
+      ])
     );
     const xSortedItemsToRemove = [...itemsRemoved].sort(
       (itemA, itemB) =>
@@ -157,7 +162,10 @@ const useIntervalTree = (edges, verticesMap, isXIntervalTree) => {
     );
 
     const yIntervalIdToIndex = new Map(
-      yIntervalTree.intervals.map(([a, b, edge], index) => [edge.id, index])
+      yIntervalTreeRef.current.intervals.map(([a, b, edge], index) => [
+        edge.id,
+        index
+      ])
     );
     const ySortedItemsToRemove = [...itemsRemoved].sort(
       (itemA, itemB) =>
@@ -171,12 +179,20 @@ const useIntervalTree = (edges, verticesMap, isXIntervalTree) => {
 
     xSortedItemsToRemove.forEach(edge => {
       const edgeId = edge.id;
-      removeNode(xIntervalTree, xIntervalTreeNodes, edgeId);
+      removeNode(
+        xIntervalTreeRef.current,
+        xIntervalTreeNodesRef.current,
+        edgeId
+      );
     });
 
     ySortedItemsToRemove.forEach(edge => {
       const edgeId = edge.id;
-      removeNode(yIntervalTree, yIntervalTreeNodes, edgeId);
+      removeNode(
+        yIntervalTreeRef.current,
+        yIntervalTreeNodesRef.current,
+        edgeId
+      );
     });
 
     itemsAdded.forEach(edge => {
