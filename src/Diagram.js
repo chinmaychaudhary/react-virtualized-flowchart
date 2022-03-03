@@ -244,10 +244,6 @@ const Diagram = props => {
     return [sentinelX, sentinelY];
   };
 
-  const registerPlumbInstance = plumbInstance => {
-    plumbInstanceRef.current = plumbInstance;
-  };
-
   const renderSentinel = (x, y) => {
     return (
       <div
@@ -283,7 +279,7 @@ const Diagram = props => {
     return (
       <Edges
         renderOverlays={props.renderOverlays}
-        registerPlumbInstance={registerPlumbInstance}
+        plumbInstanceRef={plumbInstanceRef}
         onAction={props.onAction}
         edges={[...edgesMap.values()]}
         vertices={vertices.map(v => v.vertex)}
@@ -321,7 +317,7 @@ const Diagram = props => {
     { height: "100%", overflow: "auto", position: "relative" },
     props.diagramContainerStyles
   );
-  debugger;
+
   if (props.enableZoom) {
     return (
       <div
