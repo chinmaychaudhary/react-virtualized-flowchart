@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import invariant from "invariant";
-import { useFirstMountState } from "react-use/lib/useFirstMountState";
 
+import useFirstMountState from "./useFirstMountState";
 import createIntervalTree from "../lib/intervalTree";
 
 const makeXIntervalForEdge = (edge, v1, v2) => {
