@@ -12,6 +12,11 @@ const CENTER = {
   y: 0
 };
 
+const DIMENSIONS_STYLES = {
+  height: "100%",
+  width: "100%"
+};
+
 const PanAndZoomContainer = ({
   children,
   handleScroll,
@@ -54,17 +59,26 @@ const PanAndZoomContainer = ({
   );
 
   return (
-    <div
-      style={{ height: "100%", width: "100%", position: "relative" }}
-      className="flowchartContainer"
-    >
-      <div
-        style={{ height: "100%", width: "100%", overflow: "auto" }}
-        onScroll={handleScroll}
-        ref={combinedRef}
-        {...panZoomHandlers}
-      >
-        {children({ transform })}
+    <div style={{ ...DIMENSIONS_STYLES, position: "relative" }}>
+      <div style={DIMENSIONS_STYLES} className="flowchartContainer">
+        <div
+          style={{ ...DIMENSIONS_STYLES, overflow: "auto" }}
+          onScroll={handleScroll}
+          ref={combinedRef}
+          {...panZoomHandlers}
+        >
+          <div
+            style={{
+              ...DIMENSIONS_STYLES,
+              overflow: "visible",
+              position: "relative",
+              transform
+            }}
+            className="diagramContainer"
+          >
+            {children({ zoom })}
+          </div>
+        </div>
       </div>
       <PanAndZoomControls
         zoom={zoom}

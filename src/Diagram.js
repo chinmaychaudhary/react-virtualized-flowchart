@@ -209,12 +209,12 @@ const Diagram = props => {
     updateScroll(e.currentTarget);
   };
 
-  const getVisibleEdges = () => {
+  const getVisibleEdges = (zoom = 1) => {
     const { scroll, version } = state;
     const { width, height } =
       containerRef.current?.getBoundingClientRect() ?? DEFAULT_CONTAINER_RECT;
 
-    const scale = 1 / (props.zoom || 1);
+    const scale = 1 / zoom;
     const scrollLeft = scroll.left * scale;
     const scrollTop = scroll.top * scale;
     const containerWidth = width * scale;
@@ -228,12 +228,12 @@ const Diagram = props => {
     );
   };
 
-  const getVisibleVertices = () => {
+  const getVisibleVertices = (zoom = 1) => {
     const { version } = state;
 
     return getVisibleVerticesHelper(
       verticesMapRef.current,
-      getVisibleEdges(),
+      getVisibleEdges(zoom),
       version
     );
   };
@@ -310,17 +310,6 @@ const Diagram = props => {
     );
   };
 
-  const visibleVerticesMap = getVisibleVertices();
-  const edges = getVisibleEdges();
-
-  const visibleVertices = [...visibleVerticesMap.values()];
-  const [extremeX, extremeY] = getExtremeXAndY();
-
-  const mergedStyles = _merge(
-    { height: "100%", overflow: "auto", position: "relative" },
-    props.diagramContainerStyles
-  );
-
   if (props.enableZoom) {
     return (
       <PanAndZoomContainer
@@ -328,18 +317,30 @@ const Diagram = props => {
         containerRef={containerRef}
         renderPanAndZoomControls={props.renderPanAndZoomControls}
       >
-        {({ transform }) => (
-          <div style={{ transform }} className="diagramContainer">
-            {renderChildren(edges, visibleVertices, extremeX, extremeY)}
-          </div>
-        )}
+        {({ zoom }) => {
+          const visibleVerticesMap = getVisibleVertices(zoom);
+          const edges = getVisibleEdges(zoom);
+
+          const visibleVertices = [...visibleVerticesMap.values()];
+          const [extremeX, extremeY] = getExtremeXAndY();
+
+          return (
+            <>{renderChildren(edges, visibleVertices, extremeX, extremeY)}</>
+          );
+        }}
       </PanAndZoomContainer>
     );
   }
 
+  const visibleVerticesMap = getVisibleVertices();
+  const edges = getVisibleEdges();
+
+  const visibleVertices = [...visibleVerticesMap.values()];
+  const [extremeX, extremeY] = getExtremeXAndY();
+
   return (
     <div
-      style={mergedStyles}
+      style={{ height: "100%", overflow: "auto", position: "relative" }}
       ref={containerRef}
       className="diagramContainer"
       onScroll={handleScroll}
