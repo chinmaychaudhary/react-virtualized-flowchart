@@ -32,8 +32,7 @@ const PanAndZoomContainer = ({
     panZoomHandlers,
     setContainer,
     zoom,
-    setZoom,
-    pan
+    setZoom
   } = usePanZoom({
     enablePan: false,
     disableWheel: true,
