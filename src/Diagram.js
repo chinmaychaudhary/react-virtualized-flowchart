@@ -316,6 +316,7 @@ const Diagram = props => {
         handleScroll={handleScroll}
         containerRef={containerRef}
         renderPanAndZoomControls={props.renderPanAndZoomControls}
+        scroll={state.scroll}
       >
         {({ zoom }) => {
           const visibleVerticesMap = getVisibleVertices(zoom);
