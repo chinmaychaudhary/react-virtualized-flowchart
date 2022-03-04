@@ -82,6 +82,7 @@ const PanAndZoomContainer = ({
           onScroll={handleScroll}
           ref={combinedRef}
           {...panZoomHandlers}
+          className="diagramContainer"
         >
           <div
             ref={diagramContainerRef}
@@ -90,7 +91,6 @@ const PanAndZoomContainer = ({
               overflow: "visible",
               position: "relative"
             }}
-            className="diagramContainer"
           >
             {children({ zoom })}
           </div>
