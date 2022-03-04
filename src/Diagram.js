@@ -266,10 +266,10 @@ const Diagram = props => {
     return props.renderBackground(x, y);
   };
 
-  const renderVertices = vertices => {
+  const renderVertices = (vertices, zoom) => {
     return vertices.map(({ vertex, index }) => (
       <React.Fragment key={vertex.id}>
-        {props.renderVertex({ vertex, index })}
+        {props.renderVertex({ vertex, index, zoom })}
       </React.Fragment>
     ));
   };
@@ -299,10 +299,10 @@ const Diagram = props => {
     );
   };
 
-  const renderChildren = (edges, vertices, extremeX, extremeY) => {
+  const renderChildren = (edges, vertices, extremeX, extremeY, zoom = 1) => {
     return (
       <>
-        {renderVertices(vertices)}
+        {renderVertices(vertices, zoom)}
         {renderEdges(edges, vertices)}
         {renderSentinel(extremeX, extremeY)}
         {renderBackground(extremeX, extremeY)}
@@ -326,7 +326,9 @@ const Diagram = props => {
           const [extremeX, extremeY] = getExtremeXAndY();
 
           return (
-            <>{renderChildren(edges, visibleVertices, extremeX, extremeY)}</>
+            <>
+              {renderChildren(edges, visibleVertices, extremeX, extremeY, zoom)}
+            </>
           );
         }}
       </PanAndZoomContainer>
