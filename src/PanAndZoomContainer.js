@@ -76,7 +76,7 @@ const PanAndZoomContainer = ({
 
   return (
     <div style={{ ...DIMENSIONS_STYLES, position: "relative" }}>
-      <div style={DIMENSIONS_STYLES} className="flowchartContainer">
+      <div style={DIMENSIONS_STYLES}>
         <div
           style={{ ...DIMENSIONS_STYLES, overflow: "auto" }}
           onScroll={handleScroll}
