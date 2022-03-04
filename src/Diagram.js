@@ -345,7 +345,7 @@ const Diagram = props => {
     <div
       style={{ height: "100%", overflow: "auto", position: "relative" }}
       ref={containerRef}
-      className="diagramContainer"
+      className="flowchartContainer"
       onScroll={handleScroll}
     >
       {renderChildren(edges, visibleVertices, extremeX, extremeY)}
