@@ -4,9 +4,9 @@ import usePanZoom from "use-pan-and-zoom";
 
 import PanAndZoomControls from "./PanAndZoomControls";
 
-const MIN_ZOOM = 0.25;
-const MAX_ZOOM = 1.75;
-const STEP_SIZE = 0.25;
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 1.8;
+const STEP_SIZE = 0.2;
 const CENTER = {
   x: 0,
   y: 0
@@ -17,7 +17,6 @@ const DIMENSIONS_STYLES = {
   width: "100%"
 };
 
-let change = 0;
 const PanAndZoomContainer = ({
   children,
   handleScroll,
@@ -43,13 +42,11 @@ const PanAndZoomContainer = ({
   const incrementZoom = useCallback(() => {
     const incrementedZoom = Math.floor(zoom / STEP_SIZE + 1) * STEP_SIZE;
     setZoom(incrementedZoom, CENTER);
-    change = 1;
   }, [zoom, setZoom]);
 
   const decrementZoom = useCallback(() => {
     const decrementedZoom = Math.floor((zoom - 0.01) / STEP_SIZE) * STEP_SIZE;
     setZoom(decrementedZoom, CENTER);
-    change = -1;
   }, [zoom, setZoom]);
 
   const resetZoom = useCallback(() => {
@@ -66,8 +63,9 @@ const PanAndZoomContainer = ({
 
   useEffect(() => {
     containerRef.current.scrollBy({
-      left: scroll.left * Math.abs(zoom - previousZoom.current) * change,
-      top: scroll.top * Math.abs(zoom - previousZoom.current) * change
+      left:
+        (scroll.left * (zoom - previousZoom.current)) / previousZoom.current,
+      top: (scroll.top * (zoom - previousZoom.current)) / previousZoom.current
     });
     setTimeout(() => {
       diagramContainerRef.current.style.transform = transform;
