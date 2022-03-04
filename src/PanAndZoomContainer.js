@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useLayoutEffect } from "react";
 import usePanZoom from "use-pan-and-zoom";
 
 import PanAndZoomControls from "./PanAndZoomControls";
@@ -62,15 +62,15 @@ const PanAndZoomContainer = ({
   );
 
   useEffect(() => {
+    diagramContainerRef.current.style.transform = transform;
+  }, [transform]);
+
+  useLayoutEffect(() => {
     containerRef.current.scrollBy({
       left:
         (scroll.left * (zoom - previousZoom.current)) / previousZoom.current,
       top: (scroll.top * (zoom - previousZoom.current)) / previousZoom.current
     });
-    setTimeout(() => {
-      diagramContainerRef.current.style.transform = transform;
-    }, 0);
-
     previousZoom.current = zoom;
   }, [zoom]);
 
