@@ -1,121 +1,40 @@
+// Libraries
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
-import memoizeOne from "memoize-one";
 import _throttle from "lodash/throttle";
-import _merge from "lodash/merge";
 import usePrevious from "react-use/lib/usePrevious";
 
+// Components
 import Edges from "./Edges";
 import PanAndZoomContainer from "./PanAndZoomContainer";
-import { getAddedOrRemovedItems } from "./helper";
+
+// Hooks
 import useIntervalTree from "./hooks/useIntervalTree";
 import useEdgesAndVertices from "./hooks/useEdgesAndVertices";
 
-const MARGIN = 100;
-const DEFAULT_CONTAINER_RECT = {
-  width: 0,
-  height: 0
-};
-const DEFAULT_STATE = {
-  scroll: {
-    left: 0,
-    top: 0
-  },
-  version: 0,
-  isContainerElReady: false
-};
+// Helpers
+import {
+  getAddedOrRemovedItems,
+  getXUpper,
+  getYUpper,
+  getExtremeVertices,
+  getVisibleVerticesHelper,
+  getViewport
+} from "./helper";
 
-const getXUpper = vertex => {
-  return (vertex.left || 0) + (vertex.width || 0);
-};
-
-const getYUpper = vertex => {
-  return (vertex.top || 0) + (vertex.height || 0);
-};
-
-const getExtremeVertices = memoizeOne(vertices => {
-  return vertices.reduce(
-    (res, vertex) => {
-      if (getXUpper(res.rightMostVertex) < getXUpper(vertex)) {
-        res.rightMostVertex = vertex;
-      }
-
-      if (getYUpper(res.bottomMostVertex) < getYUpper(vertex)) {
-        res.bottomMostVertex = vertex;
-      }
-
-      return res;
-    },
-    {
-      rightMostVertex: { left: -1, width: 0 },
-      bottomMostVertex: { top: -1, height: 0 }
-    }
-  );
-});
-
-const getVisibleVerticesHelper = memoizeOne(
-  (universalVerticesMap, visibleEdgesMap, version) => {
-    const visibleVertices = new Map();
-    visibleEdgesMap.forEach(edge => {
-      visibleVertices.set(
-        edge.sourceId,
-        universalVerticesMap.get(edge.sourceId)
-      );
-      visibleVertices.set(
-        edge.targetId,
-        universalVerticesMap.get(edge.targetId)
-      );
-    });
-
-    return visibleVertices;
-  }
-);
-
-const getVisibleEdgesHelper = memoizeOne(
-  (viewport, xIntervalTree, yIntervalTree, version) => {
-    const xEdgesMap = new Map();
-    const yEdgesMap = new Map();
-    const visibleVertices = new Map();
-    xIntervalTree.queryInterval(
-      viewport.xMin,
-      viewport.xMax,
-      ([low, high, edge]) => {
-        xEdgesMap.set(edge.id, edge);
-      }
-    );
-    yIntervalTree.queryInterval(
-      viewport.yMin,
-      viewport.yMax,
-      ([low, high, edge]) => {
-        yEdgesMap.set(edge.id, edge);
-      }
-    );
-
-    xEdgesMap.forEach((edge, edgeId) => {
-      if (yEdgesMap.has(edgeId)) {
-        visibleVertices.set(edgeId, edge);
-      }
-    });
-
-    return visibleVertices;
-  }
-);
-
-const getViewport = memoizeOne(
-  (scrollLeft, scrollTop, clientWidth, clientHeight) => ({
-    xMin: scrollLeft,
-    xMax: scrollLeft + clientWidth,
-    yMin: scrollTop,
-    yMax: scrollTop + clientHeight
-  })
-);
+// Constants
+import {
+  MARGIN,
+  DEFAULT_CONTAINER_RECT,
+  DIAGRAM_INITIAL_STATE
+} from "./constants";
 
 const Diagram = props => {
   const prevEdges = usePrevious(props.edges);
   const prevVertices = usePrevious(props.vertices);
 
-  const [state, setState] = useState(DEFAULT_STATE);
+  const [state, setState] = useState(DIAGRAM_INITIAL_STATE);
   const containerRef = useRef();
 
   const {
@@ -126,8 +45,7 @@ const Diagram = props => {
   } = useEdgesAndVertices(props.edges, props.vertices);
 
   const {
-    xIntervalTree,
-    yIntervalTree,
+    getVisibleEdgesHelper,
     updateIntervalTrees,
     updateEdges
   } = useIntervalTree(props.edges, verticesMapRef.current);
@@ -222,10 +140,7 @@ const Diagram = props => {
     const containerHeight = height * scale;
 
     return getVisibleEdgesHelper(
-      getViewport(scrollLeft, scrollTop, containerWidth, containerHeight),
-      xIntervalTree,
-      yIntervalTree,
-      version
+      getViewport(scrollLeft, scrollTop, containerWidth, containerHeight)
     );
   };
 

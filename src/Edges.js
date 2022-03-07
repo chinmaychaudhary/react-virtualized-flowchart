@@ -1,8 +1,11 @@
+// Libraries
 import * as React from "react";
 import PropTypes from "prop-types";
 
+// Components
 import Overlays from "./Overlays";
 
+// Hooks
 import usePlumbInstance from "./hooks/usePlumbInstance";
 
 const Edges = props => {

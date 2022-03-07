@@ -1,38 +1,23 @@
-import { useRef } from "react";
+// Libraries
+import * as React from "react";
+import { useRef, useCallback } from "react";
 
-const getVerticesMap = vertices => {
-  return new Map(vertices.map((v, index) => [v.id, { vertex: v, index }]));
-};
-
-const addEdge = (vToEMap, edge, vertexId) => {
-  let sourceVertexEdgeList = vToEMap.get(vertexId);
-  if (sourceVertexEdgeList) {
-    sourceVertexEdgeList.push(edge);
-  } else {
-    vToEMap.set(vertexId, [edge]);
-  }
-};
-
-const initVerticesToEdgesMap = edges =>
-  edges.reduce((vToEMap, edge) => {
-    addEdge(vToEMap, edge, edge.sourceId);
-    addEdge(vToEMap, edge, edge.targetId);
-    return vToEMap;
-  }, new Map());
+// Helpers
+import { getVerticesMap, initVerticesToEdgesMap } from "../helper";
 
 const useEdgesAndVertices = (edges, vertices) => {
   const verticesRef = useRef(vertices);
   const verticesMapRef = useRef(getVerticesMap(vertices));
   const verticesToEdgesMapRef = useRef(initVerticesToEdgesMap(edges));
 
-  const setVertices = vertices => {
+  const setVertices = useCallback(vertices => {
     verticesRef.current = vertices;
     verticesMapRef.current = getVerticesMap(vertices);
     return {
       vertices: verticesRef.current,
       verticesMap: verticesMapRef.current
     };
-  };
+  }, []);
 
   return {
     vertices: verticesRef.current,

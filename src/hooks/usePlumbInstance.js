@@ -1,45 +1,72 @@
-import { useState, useRef, useEffect } from "react";
+// Libraries
+import * as React from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { jsPlumb } from "jsplumb";
 import usePrevious from "react-use/lib/usePrevious";
 
+// Helpers
 import { getAddedOrRemovedItems, getOverlays } from "../helper";
 
-const DEFAULT_STATE = {
-  overlayEdges: []
-};
+// Constants
+import { PLUMB_INSTANCE_INITIAL_STATE } from "../constants";
 
 const usePlumbInstance = props => {
   const prevVertices = usePrevious(props.vertices);
   const prevEdges = usePrevious(props.edges);
-  const [state, setState] = useState(DEFAULT_STATE);
+  const [state, setState] = useState(PLUMB_INSTANCE_INITIAL_STATE);
   const plumbInstanceRef = useRef();
   const plumbConnectionsRef = useRef();
 
-  const addConnectionsAndEndpoints = (addedEdges = []) => {
-    addedEdges.forEach(edge => {
-      const { sourceId, targetId } = edge;
-      const sourceEndpoint = plumbInstanceRef.current.addEndpoint(sourceId, {
-          ...(edge.sourceEndpointStyles || props.sourceEndpointStyles),
-          ...(edge.sourceEndpointOptions || props.sourceEndpointOptions),
-          isSource: true
-        }),
-        targetEndpoint = plumbInstanceRef.current.addEndpoint(targetId, {
-          ...(edge.targetEndpointStyles || props.targetEndpointStyles),
-          ...(edge.targetEndpointOptions || props.targetEndpointOptions),
-          isTarget: true
-        });
+  const {
+    sourceEndpointStyles,
+    sourceEndpointOptions,
+    targetEndpointStyles,
+    targetEndpointOptions,
+    edgeStyles,
+    edgeOptions,
+    draggableOptions,
+    droppableOptions,
+    areVerticesDraggable,
+    onAction
+  } = props;
 
-      plumbConnectionsRef.current[edge.id] = plumbInstanceRef.current.connect({
-        ...(edge.styles || props.edgeStyles),
-        ...(edge.options || props.edgeOptions),
-        source: sourceEndpoint,
-        target: targetEndpoint,
-        overlays: getOverlays(edge)
+  const addConnectionsAndEndpoints = useCallback(
+    (addedEdges = []) => {
+      addedEdges.forEach(edge => {
+        const { sourceId, targetId } = edge;
+        const sourceEndpoint = plumbInstanceRef.current.addEndpoint(sourceId, {
+            ...(edge.sourceEndpointStyles || sourceEndpointStyles),
+            ...(edge.sourceEndpointOptions || sourceEndpointOptions),
+            isSource: true
+          }),
+          targetEndpoint = plumbInstanceRef.current.addEndpoint(targetId, {
+            ...(edge.targetEndpointStyles || targetEndpointStyles),
+            ...(edge.targetEndpointOptions || targetEndpointOptions),
+            isTarget: true
+          });
+
+        plumbConnectionsRef.current[edge.id] = plumbInstanceRef.current.connect(
+          {
+            ...(edge.styles || edgeStyles),
+            ...(edge.options || edgeOptions),
+            source: sourceEndpoint,
+            target: targetEndpoint,
+            overlays: getOverlays(edge)
+          }
+        );
       });
-    });
-  };
+    },
+    [
+      sourceEndpointStyles,
+      sourceEndpointOptions,
+      targetEndpointStyles,
+      targetEndpointOptions,
+      edgeStyles,
+      edgeOptions
+    ]
+  );
 
-  const removeConnectionsAndEndpoints = (removedEdges = []) => {
+  const removeConnectionsAndEndpoints = useCallback((removedEdges = []) => {
     removedEdges.forEach(edge => {
       const connection = plumbConnectionsRef.current[edge.id];
       const connectionEndpoints = connection.endpoints;
@@ -48,91 +75,114 @@ const usePlumbInstance = props => {
       plumbInstanceRef.current.deleteEndpoint(connectionEndpoints[0]);
       plumbInstanceRef.current.deleteEndpoint(connectionEndpoints[1]);
     });
-  };
+  }, []);
 
-  const drawConnections = () => {
+  const drawConnections = useCallback(() => {
     addConnectionsAndEndpoints(props.edges);
     setState({ overlayEdges: props.edges });
-  };
+  }, [addConnectionsAndEndpoints, setState, props.edges]);
 
-  const handleStop = dragEndEvent => {
-    props.onAction({
-      type: "ITEM_DRAGGED",
-      payload: {
-        vertexEl: dragEndEvent.el,
-        finalPos: dragEndEvent.finalPos
-      }
-    });
-  };
-
-  const handleDrop = dropEndEvent => {
-    props.onAction({
-      type: "ITEM_DROPPED",
-      payload: {
-        dropEndEvent
-      }
-    });
-  };
-
-  const makeVerticesDraggable = vertices => {
-    vertices.forEach(vertex => {
-      plumbInstanceRef.current.draggable(vertex.id, {
-        ...props.draggableOptions,
-        stop: handleStop
+  const handleStop = useCallback(
+    dragEndEvent => {
+      onAction({
+        type: "ITEM_DRAGGED",
+        payload: {
+          vertexEl: dragEndEvent.el,
+          finalPos: dragEndEvent.finalPos
+        }
       });
-      if (
-        !plumbInstanceRef.current
-          .getElement(vertex.id)
-          .classList.contains("jtk-droppable")
-      ) {
-        plumbInstanceRef.current.droppable(vertex.id, {
-          ...props.droppableOptions,
-          drop: handleDrop
+    },
+    [onAction]
+  );
+
+  const handleDrop = useCallback(
+    dropEndEvent => {
+      onAction({
+        type: "ITEM_DROPPED",
+        payload: {
+          dropEndEvent
+        }
+      });
+    },
+    [onAction]
+  );
+
+  const makeVerticesDraggable = useCallback(
+    vertices => {
+      vertices.forEach(vertex => {
+        plumbInstanceRef.current.draggable(vertex.id, {
+          ...draggableOptions,
+          stop: handleStop
         });
-      }
-    });
-  };
+        if (
+          !plumbInstanceRef.current
+            .getElement(vertex.id)
+            .classList.contains("jtk-droppable")
+        ) {
+          plumbInstanceRef.current.droppable(vertex.id, {
+            ...droppableOptions,
+            drop: handleDrop
+          });
+        }
+      });
+    },
+    [draggableOptions, droppableOptions, handleStop, handleDrop]
+  );
 
-  const updateConnections = ({ itemsAdded, itemsRemoved }) => {
-    removeConnectionsAndEndpoints(itemsRemoved);
-    addConnectionsAndEndpoints(itemsAdded);
-    setState({ overlayEdges: props.edges });
-  };
+  const updateConnections = useCallback(
+    ({ itemsAdded, itemsRemoved }) => {
+      removeConnectionsAndEndpoints(itemsRemoved);
+      addConnectionsAndEndpoints(itemsAdded);
+      setState({ overlayEdges: props.edges });
+    },
+    [
+      removeConnectionsAndEndpoints,
+      addConnectionsAndEndpoints,
+      setState,
+      props.edges
+    ]
+  );
 
-  const unmanageVertices = (verticesRemoved, verticesUpdated) => {
+  const unmanageVertices = useCallback((verticesRemoved, verticesUpdated) => {
     verticesRemoved.map(vertex => {
       plumbInstanceRef.current.unmanage(vertex.id);
     });
     verticesUpdated.map(vertex => {
       plumbInstanceRef.current.destroyDraggable(vertex.id);
     });
-  };
+  }, []);
 
-  const updateVertices = ({ itemsAdded, itemsRemoved, itemsUpdated }) => {
-    unmanageVertices(itemsRemoved, itemsUpdated);
-    if (props.areVerticesDraggable) {
-      makeVerticesDraggable(itemsAdded);
-    } else {
+  const updateVertices = useCallback(
+    ({ itemsAdded, itemsRemoved, itemsUpdated }) => {
+      unmanageVertices(itemsRemoved, itemsUpdated);
+      if (areVerticesDraggable) {
+        makeVerticesDraggable(itemsAdded);
+      } else {
+        /*
+         * plumbInstance.draggable manages vertices internally
+         * Since we cannot make a vertex draggable here, so added the following code to manage them
+         **/
+        itemsAdded.map(vertex => {
+          plumbInstanceRef.current.manage(
+            vertex.id,
+            plumbInstanceRef.current.getElement(vertex.id)
+          );
+        });
+      }
+
       /*
-       * plumbInstance.draggable manages vertices internally
-       * Since we cannot make a vertex draggable here, so added the following code to manage them
+       * plumbInstance.manage utility doesn't recalculate the offsets
+       * Whenever an element is updated forcefully from external changes, we need to recalculate
        **/
       itemsAdded.map(vertex => {
-        plumbInstanceRef.current.manage(
-          vertex.id,
-          plumbInstanceRef.current.getElement(vertex.id)
-        );
+        plumbInstanceRef.current.updateOffset({
+          elId: vertex.id,
+          recalc: true
+        });
       });
-    }
-
-    /*
-     * plumbInstance.manage utility doesn't recalculate the offsets
-     * Whenever an element is updated forcefully from external changes, we need to recalculate
-     **/
-    itemsAdded.map(vertex => {
-      plumbInstanceRef.current.updateOffset({ elId: vertex.id, recalc: true });
-    });
-  };
+    },
+    [unmanageVertices, areVerticesDraggable, makeVerticesDraggable]
+  );
 
   useEffect(() => {
     jsPlumb.ready(() => {
@@ -140,7 +190,7 @@ const usePlumbInstance = props => {
       props.plumbInstanceRef.current = plumbInstanceRef.current;
       plumbConnectionsRef.current = {};
       drawConnections();
-      if (props.areVerticesDraggable) {
+      if (areVerticesDraggable) {
         makeVerticesDraggable(props.vertices);
       }
     });

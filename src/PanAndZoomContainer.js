@@ -1,18 +1,15 @@
+// Libraries
 import * as React from "react";
 import { useCallback, useEffect, useRef, useLayoutEffect } from "react";
 import usePanZoom from "use-pan-and-zoom";
 
+// Components
 import PanAndZoomControls from "./PanAndZoomControls";
 
-const MIN_ZOOM = 0.2;
-const MAX_ZOOM = 1.8;
-const STEP_SIZE = 0.2;
-const CENTER = {
-  x: 0,
-  y: 0
-};
+// Constants
+import { MIN_ZOOM, MAX_ZOOM, STEP_SIZE, CENTER } from "./constants";
 
-const DIMENSIONS_STYLES = {
+const STYLES = {
   height: "100%",
   width: "100%"
 };
@@ -75,10 +72,10 @@ const PanAndZoomContainer = ({
   }, [zoom]);
 
   return (
-    <div style={{ ...DIMENSIONS_STYLES, position: "relative" }}>
-      <div style={DIMENSIONS_STYLES}>
+    <div style={{ ...STYLES, position: "relative" }}>
+      <div style={STYLES}>
         <div
-          style={{ ...DIMENSIONS_STYLES, overflow: "auto" }}
+          style={{ ...STYLES, overflow: "auto" }}
           onScroll={handleScroll}
           ref={combinedRef}
           {...panZoomHandlers}
@@ -87,7 +84,7 @@ const PanAndZoomContainer = ({
           <div
             ref={diagramContainerRef}
             style={{
-              ...DIMENSIONS_STYLES,
+              ...STYLES,
               overflow: "visible",
               position: "relative"
             }}
