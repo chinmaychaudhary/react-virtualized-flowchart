@@ -211,8 +211,9 @@ const Diagram = props => {
 
   const getVisibleEdges = (zoom = 1) => {
     const { scroll, version } = state;
-    const { width, height } =
-      containerRef.current?.getBoundingClientRect() ?? DEFAULT_CONTAINER_RECT;
+    const { width, height } = containerRef.current
+      ? containerRef.current.getBoundingClientRect()
+      : DEFAULT_CONTAINER_RECT;
 
     const scale = 1 / zoom;
     const scrollLeft = scroll.left * scale;
