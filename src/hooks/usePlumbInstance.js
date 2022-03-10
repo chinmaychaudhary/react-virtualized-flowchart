@@ -1,6 +1,12 @@
 // Libraries
 import * as React from "react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useLayoutEffect
+} from "react";
 import { jsPlumb } from "jsplumb";
 import usePrevious from "react-use/lib/usePrevious";
 
@@ -196,7 +202,7 @@ const usePlumbInstance = props => {
     });
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (prevVertices && prevVertices !== props.vertices) {
       updateVertices(getAddedOrRemovedItems(prevVertices, props.vertices));
     }
