@@ -36,6 +36,9 @@ const usePlumbInstance = props => {
     onAction
   } = props;
 
+  const onActionRef = useRef(onAction);
+  onActionRef.current = onAction;
+
   const addConnectionsAndEndpoints = useCallback(
     (addedEdges = []) => {
       addedEdges.forEach(edge => {
@@ -88,30 +91,24 @@ const usePlumbInstance = props => {
     setState({ overlayEdges: props.edges });
   }, [addConnectionsAndEndpoints, setState, props.edges]);
 
-  const handleStop = useCallback(
-    dragEndEvent => {
-      onAction({
-        type: "ITEM_DRAGGED",
-        payload: {
-          vertexEl: dragEndEvent.el,
-          finalPos: dragEndEvent.finalPos
-        }
-      });
-    },
-    [onAction]
-  );
+  const handleStop = dragEndEvent => {
+    onActionRef.current({
+      type: "ITEM_DRAGGED",
+      payload: {
+        vertexEl: dragEndEvent.el,
+        finalPos: dragEndEvent.finalPos
+      }
+    });
+  };
 
-  const handleDrop = useCallback(
-    dropEndEvent => {
-      onAction({
-        type: "ITEM_DROPPED",
-        payload: {
-          dropEndEvent
-        }
-      });
-    },
-    [onAction]
-  );
+  const handleDrop = dropEndEvent => {
+    onActionRef.current({
+      type: "ITEM_DROPPED",
+      payload: {
+        dropEndEvent
+      }
+    });
+  };
 
   const makeVerticesDraggable = useCallback(
     vertices => {
