@@ -249,7 +249,12 @@ const Diagram = props => {
   );
 
   const renderChildren = useCallback(
-    (edges, vertices, extremeX, extremeY, zoom = 1) => {
+    (zoom = 1) => {
+      const verticesMap = getVisibleVertices(zoom);
+      const edges = getVisibleEdges(zoom);
+
+      const vertices = [...verticesMap.values()];
+      const [extremeX, extremeY] = getExtremeXAndY();
       return (
         <>
           {renderVertices(vertices, zoom)}
@@ -259,7 +264,15 @@ const Diagram = props => {
         </>
       );
     },
-    [renderVertices, renderEdges, renderSentinel, renderBackground]
+    [
+      getVisibleVertices,
+      getVisibleEdges,
+      getExtremeXAndY,
+      renderVertices,
+      renderEdges,
+      renderSentinel,
+      renderBackground
+    ]
   );
 
   if (props.enableZoom) {
@@ -270,28 +283,10 @@ const Diagram = props => {
         renderPanAndZoomControls={props.renderPanAndZoomControls}
         scroll={state.scroll}
       >
-        {({ zoom }) => {
-          const visibleVerticesMap = getVisibleVertices(zoom);
-          const edges = getVisibleEdges(zoom);
-
-          const visibleVertices = [...visibleVerticesMap.values()];
-          const [extremeX, extremeY] = getExtremeXAndY();
-
-          return (
-            <>
-              {renderChildren(edges, visibleVertices, extremeX, extremeY, zoom)}
-            </>
-          );
-        }}
+        {({ zoom }) => <>{renderChildren(zoom)}</>}
       </PanAndZoomContainer>
     );
   }
-
-  const visibleVerticesMap = getVisibleVertices();
-  const edges = getVisibleEdges();
-
-  const visibleVertices = [...visibleVerticesMap.values()];
-  const [extremeX, extremeY] = getExtremeXAndY();
 
   return (
     <div
@@ -300,7 +295,7 @@ const Diagram = props => {
       className="diagramContainer"
       onScroll={handleScroll}
     >
-      {renderChildren(edges, visibleVertices, extremeX, extremeY)}
+      {renderChildren()}
     </div>
   );
 };
