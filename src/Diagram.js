@@ -133,25 +133,22 @@ const Diagram = props => {
     [updateScroll]
   );
 
-  const getVisibleEdges = useCallback(
-    (zoom = 1) => {
-      const { scroll, version } = state;
-      const { width, height } = containerRef.current
-        ? containerRef.current.getBoundingClientRect()
-        : DEFAULT_CONTAINER_RECT;
+  const getVisibleEdges = (zoom = 1) => {
+    const { scroll, version } = state;
+    const { width, height } = containerRef.current
+      ? containerRef.current.getBoundingClientRect()
+      : DEFAULT_CONTAINER_RECT;
 
-      const scale = 1 / zoom;
-      const scrollLeft = scroll.left * scale;
-      const scrollTop = scroll.top * scale;
-      const containerWidth = width * scale;
-      const containerHeight = height * scale;
+    const scale = 1 / zoom;
+    const scrollLeft = scroll.left * scale;
+    const scrollTop = scroll.top * scale;
+    const containerWidth = width * scale;
+    const containerHeight = height * scale;
 
-      return getVisibleEdgesHelper(
-        getViewport(scrollLeft, scrollTop, containerWidth, containerHeight)
-      );
-    },
-    [getVisibleEdgesHelper]
-  );
+    return getVisibleEdgesHelper(
+      getViewport(scrollLeft, scrollTop, containerWidth, containerHeight)
+    );
+  };
 
   const getVisibleVertices = useCallback(
     (zoom = 1) => {
