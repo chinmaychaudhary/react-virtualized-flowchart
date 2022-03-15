@@ -1,6 +1,6 @@
 // Libraries
 import * as React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import _throttle from "lodash/throttle";
 import usePrevious from "react-use/lib/usePrevious";
@@ -110,60 +110,72 @@ const Diagram = props => {
     }
   });
 
-  const updateScroll = _throttle(target => {
-    setState(prevState => ({
-      ...prevState,
-      scroll: {
-        left: target.scrollLeft,
-        top: target.scrollTop
+  const updateScroll = useCallback(
+    _throttle(target => {
+      setState(prevState => ({
+        ...prevState,
+        scroll: {
+          left: target.scrollLeft,
+          top: target.scrollTop
+        }
+      }));
+    }, 0),
+    [setState]
+  );
+
+  const handleScroll = useCallback(
+    e => {
+      if (e.target !== e.currentTarget) {
+        return;
       }
-    }));
-  }, 0);
+      updateScroll(e.currentTarget);
+    },
+    [updateScroll]
+  );
 
-  const handleScroll = e => {
-    if (e.target !== e.currentTarget) {
-      return;
-    }
-    updateScroll(e.currentTarget);
-  };
+  const getVisibleEdges = useCallback(
+    (zoom = 1) => {
+      const { scroll, version } = state;
+      const { width, height } = containerRef.current
+        ? containerRef.current.getBoundingClientRect()
+        : DEFAULT_CONTAINER_RECT;
 
-  const getVisibleEdges = (zoom = 1) => {
-    const { scroll, version } = state;
-    const { width, height } = containerRef.current
-      ? containerRef.current.getBoundingClientRect()
-      : DEFAULT_CONTAINER_RECT;
+      const scale = 1 / zoom;
+      const scrollLeft = scroll.left * scale;
+      const scrollTop = scroll.top * scale;
+      const containerWidth = width * scale;
+      const containerHeight = height * scale;
 
-    const scale = 1 / zoom;
-    const scrollLeft = scroll.left * scale;
-    const scrollTop = scroll.top * scale;
-    const containerWidth = width * scale;
-    const containerHeight = height * scale;
+      return getVisibleEdgesHelper(
+        getViewport(scrollLeft, scrollTop, containerWidth, containerHeight)
+      );
+    },
+    [getVisibleEdgesHelper]
+  );
 
-    return getVisibleEdgesHelper(
-      getViewport(scrollLeft, scrollTop, containerWidth, containerHeight)
-    );
-  };
+  const getVisibleVertices = useCallback(
+    (zoom = 1) => {
+      const { version } = state;
 
-  const getVisibleVertices = (zoom = 1) => {
-    const { version } = state;
+      return getVisibleVerticesHelper(
+        verticesMapRef.current,
+        getVisibleEdges(zoom),
+        version
+      );
+    },
+    [getVisibleEdges]
+  );
 
-    return getVisibleVerticesHelper(
-      verticesMapRef.current,
-      getVisibleEdges(zoom),
-      version
-    );
-  };
-
-  const getExtremeXAndY = () => {
+  const getExtremeXAndY = useCallback(() => {
     const { rightMostVertex, bottomMostVertex } = getExtremeVertices(vertices);
 
     const sentinelX = getXUpper(rightMostVertex) + MARGIN;
     const sentinelY = getYUpper(bottomMostVertex) + MARGIN;
 
     return [sentinelX, sentinelY];
-  };
+  }, [vertices]);
 
-  const renderSentinel = (x, y) => {
+  const renderSentinel = useCallback((x, y) => {
     return (
       <div
         style={{
@@ -176,55 +188,79 @@ const Diagram = props => {
         }}
       />
     );
-  };
+  }, []);
 
-  const renderBackground = (x, y) => {
-    return props.renderBackground(x, y);
-  };
+  const renderBackground = useCallback(
+    (x, y) => {
+      return props.renderBackground(x, y);
+    },
+    [props.renderBackground]
+  );
 
-  const renderVertices = (vertices, zoom) => {
-    return vertices.map(({ vertex, index }) => (
-      <React.Fragment key={vertex.id}>
-        {props.renderVertex({ vertex, index, zoom })}
-      </React.Fragment>
-    ));
-  };
+  const renderVertices = useCallback(
+    (vertices, zoom) => {
+      return vertices.map(({ vertex, index }) => (
+        <React.Fragment key={vertex.id}>
+          {props.renderVertex({ vertex, index, zoom })}
+        </React.Fragment>
+      ));
+    },
+    [props.renderVertex]
+  );
 
-  const renderEdges = (edgesMap, vertices) => {
-    if (!state.isContainerElReady) {
-      return null;
-    }
+  const renderEdges = useCallback(
+    (edgesMap, vertices) => {
+      if (!state.isContainerElReady) {
+        return null;
+      }
 
-    return (
-      <Edges
-        renderOverlays={props.renderOverlays}
-        plumbInstanceRef={plumbInstanceRef}
-        onAction={props.onAction}
-        edges={[...edgesMap.values()]}
-        vertices={vertices.map(v => v.vertex)}
-        containerEl={containerRef.current}
-        sourceEndpointStyles={props.sourceEndpointStyles}
-        sourceEndpointOptions={props.sourceEndpointOptions}
-        targetEndpointStyles={props.targetEndpointStyles}
-        targetEndpointOptions={props.targetEndpointOptions}
-        edgeStyles={props.edgeStyles}
-        draggableOptions={props.draggableOptions}
-        droppableOptions={props.droppableOptions}
-        areVerticesDraggable={props.areVerticesDraggable}
-      />
-    );
-  };
+      return (
+        <Edges
+          renderOverlays={props.renderOverlays}
+          plumbInstanceRef={plumbInstanceRef}
+          onAction={props.onAction}
+          edges={[...edgesMap.values()]}
+          vertices={vertices.map(v => v.vertex)}
+          containerEl={containerRef.current}
+          sourceEndpointStyles={props.sourceEndpointStyles}
+          sourceEndpointOptions={props.sourceEndpointOptions}
+          targetEndpointStyles={props.targetEndpointStyles}
+          targetEndpointOptions={props.targetEndpointOptions}
+          edgeStyles={props.edgeStyles}
+          draggableOptions={props.draggableOptions}
+          droppableOptions={props.droppableOptions}
+          areVerticesDraggable={props.areVerticesDraggable}
+        />
+      );
+    },
+    [
+      state.isContainerElReady,
+      props.renderOverlays,
+      props.onAction,
+      props.sourceEndpointStyles,
+      props.sourceEndpointOptions,
+      props.targetEndpointStyles,
+      props.targetEndpointOptions,
+      props.edgeStyles,
+      props.draggableOptions,
+      props.droppableOptions,
+      props.areVerticesDraggable
+    ]
+  );
 
-  const renderChildren = (edges, vertices, extremeX, extremeY, zoom = 1) => {
-    return (
-      <>
-        {renderVertices(vertices, zoom)}
-        {renderEdges(edges, vertices)}
-        {renderSentinel(extremeX, extremeY)}
-        {renderBackground(extremeX, extremeY)}
-      </>
-    );
-  };
+  const renderChildren = useCallback(
+    (edges, vertices, extremeX, extremeY, zoom = 1) => {
+      return (
+        <>
+          {renderVertices(vertices, zoom)}
+          {renderEdges(edges, vertices)}
+          {renderSentinel(extremeX, extremeY)}
+          {renderBackground(extremeX, extremeY)}
+        </>
+      );
+    },
+    [renderVertices, renderEdges, renderSentinel, renderBackground]
+  );
 
   if (props.enableZoom) {
     return (
