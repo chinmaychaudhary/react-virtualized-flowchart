@@ -19,17 +19,12 @@ const PanAndZoomContainer = ({
   handleScroll,
   containerRef,
   renderPanAndZoomControls,
-  scroll
+  scroll,
+  contentSpan
 }) => {
   const previousZoom = useRef(1);
   const diagramContainerRef = useRef();
-  const {
-    transform,
-    panZoomHandlers,
-    setContainer,
-    zoom,
-    setZoom
-  } = usePanZoom({
+  const { panZoomHandlers, setContainer, zoom, pan, setZoom } = usePanZoom({
     enablePan: false,
     disableWheel: true,
     minZoom: MIN_ZOOM,
@@ -59,17 +54,44 @@ const PanAndZoomContainer = ({
   );
 
   useEffect(() => {
-    diagramContainerRef.current.style.transform = transform;
-  }, [transform]);
+    const container = containerRef.current;
 
-  useLayoutEffect(() => {
-    containerRef.current.scrollBy({
-      left:
-        (scroll.left * (zoom - previousZoom.current)) / previousZoom.current,
-      top: (scroll.top * (zoom - previousZoom.current)) / previousZoom.current
-    });
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    let x = pan.x,
+      y = pan.y;
+
+    const extremeX = Math.max(contentSpan.x, containerWidth),
+      extremeY = Math.max(contentSpan.y, containerHeight);
+
+    if (containerWidth >= extremeX * zoom) {
+      x = ((containerWidth - extremeX) * zoom) / 2;
+    }
+    if (containerHeight >= extremeY * zoom) {
+      y = ((containerHeight - extremeY) * zoom) / 2;
+    }
+
+    diagramContainerRef.current.style.transform = `translate3D(${x}px, ${y}px, 0) scale(${zoom})`;
+
+    container.scrollLeft =
+      (scroll.left * zoom) / previousZoom.current +
+      ((zoom - previousZoom.current) * containerWidth) /
+        (2 * previousZoom.current);
+    container.scrollTop =
+      (scroll.top * zoom) / previousZoom.current +
+      (scroll.top
+        ? ((zoom - previousZoom.current) * containerHeight) /
+          (2 * previousZoom.current)
+        : 0);
+
     previousZoom.current = zoom;
-  }, [zoom]);
+  }, [containerRef, contentSpan.x, contentSpan.y, pan.x, pan.y, zoom]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+  }, []);
 
   return (
     <div style={{ ...STYLES, position: "relative" }}>

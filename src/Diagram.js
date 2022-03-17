@@ -1,6 +1,6 @@
 // Libraries
 import * as React from "react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
 import _throttle from "lodash/throttle";
 import usePrevious from "react-use/lib/usePrevious";
@@ -245,13 +245,16 @@ const Diagram = props => {
     ]
   );
 
+  const [extremeX, extremeY] = useMemo(() => getExtremeXAndY(), [
+    getExtremeXAndY
+  ]);
+
   const renderChildren = useCallback(
     (zoom = 1) => {
       const verticesMap = getVisibleVertices(zoom);
       const edges = getVisibleEdges(zoom);
-
       const vertices = [...verticesMap.values()];
-      const [extremeX, extremeY] = getExtremeXAndY();
+
       return (
         <>
           {renderVertices(vertices, zoom)}
@@ -264,7 +267,8 @@ const Diagram = props => {
     [
       getVisibleVertices,
       getVisibleEdges,
-      getExtremeXAndY,
+      extremeX,
+      extremeY,
       renderVertices,
       renderEdges,
       renderSentinel,
@@ -279,6 +283,7 @@ const Diagram = props => {
         containerRef={containerRef}
         renderPanAndZoomControls={props.renderPanAndZoomControls}
         scroll={state.scroll}
+        contentSpan={{ x: extremeX, y: extremeY }}
       >
         {({ zoom }) => <>{renderChildren(zoom)}</>}
       </PanAndZoomContainer>
