@@ -1,169 +1,20 @@
-import React, { PureComponent } from "react";
+// Libraries
+import * as React from "react";
 import PropTypes from "prop-types";
-import { jsPlumb } from "jsplumb";
 
+// Components
 import Overlays from "./Overlays";
 
-import { getAddedOrRemovedItems, getOverlays } from "./helper";
+// Hooks
+import usePlumbInstance from "./hooks/usePlumbInstance";
 
-class Edges extends PureComponent {
-  state = {
-    overlayEdges: []
-  };
+const Edges = props => {
+  const { overlayEdges } = usePlumbInstance(props);
 
-  componentDidMount() {
-    jsPlumb.ready(() => {
-      this.plumbInstance = jsPlumb.getInstance(this.props.containerEl);
-      this.props.registerPlumbInstance(this.plumbInstance);
-      this.plumbConnections = {};
-      this.drawConnections();
-      if (this.props.areVerticesDraggable) {
-        this.makeVerticesDraggable(this.props.vertices);
-      }
-    });
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.vertices !== this.props.vertices) {
-      this.updateVertices(
-        getAddedOrRemovedItems(prevProps.vertices, this.props.vertices)
-      );
-    }
-    if (prevProps.edges !== this.props.edges) {
-      this.updateConnections(
-        getAddedOrRemovedItems(prevProps.edges, this.props.edges)
-      );
-    }
-  }
-
-  handleStop = dragEndEvent => {
-    this.props.onAction({
-      type: "ITEM_DRAGGED",
-      payload: {
-        vertexEl: dragEndEvent.el,
-        finalPos: dragEndEvent.finalPos
-      }
-    });
-  };
-
-  handleDrop = dropEndEvent => {
-    this.props.onAction({
-      type: "ITEM_DROPPED",
-      payload: {
-        dropEndEvent
-      }
-    });
-  };
-
-  unmanageVertices(verticesRemoved, verticesUpdated) {
-    verticesRemoved.map(vertex => {
-      this.plumbInstance.unmanage(vertex.id);
-    });
-    verticesUpdated.map(vertex => {
-      this.plumbInstance.destroyDraggable(vertex.id);
-    });
-  }
-
-  makeVerticesDraggable(vertices) {
-    vertices.forEach(vertex => {
-      this.plumbInstance.draggable(vertex.id, {
-        ...this.props.draggableOptions,
-        stop: this.handleStop
-      });
-      if (
-        !this.plumbInstance
-          .getElement(vertex.id)
-          .classList.contains("jtk-droppable")
-      ) {
-        this.plumbInstance.droppable(vertex.id, {
-          ...this.props.droppableOptions,
-          drop: this.handleDrop
-        });
-      }
-    });
-  }
-
-  updateConnections({ itemsAdded, itemsRemoved }) {
-    this.removeConnectionsAndEndpoints(itemsRemoved);
-    this.addConnectionsAndEndpoints(itemsAdded);
-    this.setState({ overlayEdges: this.props.edges });
-  }
-
-  updateVertices({ itemsAdded, itemsRemoved, itemsUpdated }) {
-    this.unmanageVertices(itemsRemoved, itemsUpdated);
-    if (this.props.areVerticesDraggable) {
-      this.makeVerticesDraggable(itemsAdded);
-    } else {
-      /*
-       * plumbInstance.draggable manages vertices internally
-       * Since we cannot make a vertex draggable here, so added the following code to manage them
-       **/
-      itemsAdded.map(vertex => {
-        this.plumbInstance.manage(
-          vertex.id,
-          this.plumbInstance.getElement(vertex.id)
-        );
-      });
-    }
-
-    /*
-     * plumbInstance.manage utility doesn't recalculate the offsets
-     * Whenever an element is updated forcefully from external changes, we need to recalculate
-     **/
-    itemsAdded.map(vertex => {
-      this.plumbInstance.updateOffset({ elId: vertex.id, recalc: true });
-    });
-  }
-
-  removeConnectionsAndEndpoints = (removedEdges = []) => {
-    removedEdges.forEach(edge => {
-      const connection = this.plumbConnections[edge.id];
-      const connectionEndpoints = connection.endpoints;
-
-      this.plumbInstance.deleteConnection(connection);
-      this.plumbInstance.deleteEndpoint(connectionEndpoints[0]);
-      this.plumbInstance.deleteEndpoint(connectionEndpoints[1]);
-    });
-  };
-
-  addConnectionsAndEndpoints = (addedEdges = []) => {
-    addedEdges.forEach(edge => {
-      const { sourceId, targetId } = edge;
-      const sourceEndpoint = this.plumbInstance.addEndpoint(sourceId, {
-          ...(edge.sourceEndpointStyles || this.props.sourceEndpointStyles),
-          ...(edge.sourceEndpointOptions || this.props.sourceEndpointOptions),
-          isSource: true
-        }),
-        targetEndpoint = this.plumbInstance.addEndpoint(targetId, {
-          ...(edge.targetEndpointStyles || this.props.targetEndpointStyles),
-          ...(edge.targetEndpointOptions || this.props.targetEndpointOptions),
-          isTarget: true
-        });
-
-      this.plumbConnections[edge.id] = this.plumbInstance.connect({
-        ...(edge.styles || this.props.edgeStyles),
-        ...(edge.options || this.props.edgeOptions),
-        source: sourceEndpoint,
-        target: targetEndpoint,
-        overlays: getOverlays(edge)
-      });
-    });
-  };
-
-  drawConnections() {
-    this.addConnectionsAndEndpoints(this.props.edges);
-    this.setState({ overlayEdges: this.props.edges });
-  }
-
-  render() {
-    return (
-      <Overlays
-        edges={this.state.overlayEdges}
-        renderOverlays={this.props.renderOverlays}
-      />
-    );
-  }
-}
+  return (
+    <Overlays edges={overlayEdges} renderOverlays={props.renderOverlays} />
+  );
+};
 
 Edges.displayName = "Edges";
 Edges.propTypes = {
