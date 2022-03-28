@@ -1,153 +1,29 @@
 import React from "react";
 import PropTypes from "prop-types";
-import memoizeOne from "memoize-one";
 import _throttle from "lodash/throttle";
-import _merge from "lodash/merge";
 import invariant from "invariant";
 
-import createIntervalTree from "./lib/intervalTree";
 import Edges from "./Edges";
-import { getAddedOrRemovedItems } from "./helper";
+import PanAndZoomContainer from "./PanAndZoomContainer";
 
-const MARGIN = 100;
+import createIntervalTree from "./lib/intervalTree";
+import {
+  getAddedOrRemovedItems,
+  getXUpper,
+  getYUpper,
+  getExtremeVertices,
+  getVerticesMap,
+  getVisibleVertices,
+  getVisibleEdges,
+  addEdge,
+  removeEdge,
+  getViewport,
+  removeNode,
+  makeXIntervalForEdge,
+  makeYIntervalForEdge
+} from "./helper";
 
-function getXUpper(vertex) {
-  return (vertex.left || 0) + (vertex.width || 0);
-}
-
-function getYUpper(vertex) {
-  return (vertex.top || 0) + (vertex.height || 0);
-}
-
-const getExtremeVertices = memoizeOne(vertices => {
-  return vertices.reduce(
-    (res, vertex) => {
-      if (getXUpper(res.rightMostVertex) < getXUpper(vertex)) {
-        res.rightMostVertex = vertex;
-      }
-
-      if (getYUpper(res.bottomMostVertex) < getYUpper(vertex)) {
-        res.bottomMostVertex = vertex;
-      }
-
-      return res;
-    },
-    {
-      rightMostVertex: { left: -1, width: 0 },
-      bottomMostVertex: { top: -1, height: 0 }
-    }
-  );
-});
-
-function getVerticesMap(vertices) {
-  return new Map(vertices.map((v, index) => [v.id, { vertex: v, index }]));
-}
-
-const getVisibleVertices = memoizeOne(
-  (universalVerticesMap, visibleEdgesMap, version) => {
-    const visibleVertices = new Map();
-    visibleEdgesMap.forEach(edge => {
-      visibleVertices.set(
-        edge.sourceId,
-        universalVerticesMap.get(edge.sourceId)
-      );
-      visibleVertices.set(
-        edge.targetId,
-        universalVerticesMap.get(edge.targetId)
-      );
-    });
-
-    return visibleVertices;
-  }
-);
-
-const getVisibleEdges = memoizeOne(
-  (viewport, xIntervalTree, yIntervalTree, version) => {
-    const xEdgesMap = new Map();
-    const yEdgesMap = new Map();
-    const visibleVertices = new Map();
-    xIntervalTree.queryInterval(
-      viewport.xMin,
-      viewport.xMax,
-      ([low, high, edge]) => {
-        xEdgesMap.set(edge.id, edge);
-      }
-    );
-    yIntervalTree.queryInterval(
-      viewport.yMin,
-      viewport.yMax,
-      ([low, high, edge]) => {
-        yEdgesMap.set(edge.id, edge);
-      }
-    );
-
-    xEdgesMap.forEach((edge, edgeId) => {
-      if (yEdgesMap.has(edgeId)) {
-        visibleVertices.set(edgeId, edge);
-      }
-    });
-
-    return visibleVertices;
-  }
-);
-
-function addEdge(vToEMap, edge, vertexId) {
-  let sourceVertexEdgeList = vToEMap.get(vertexId);
-  if (sourceVertexEdgeList) {
-    sourceVertexEdgeList.push(edge);
-  } else {
-    vToEMap.set(vertexId, [edge]);
-  }
-}
-
-function removeEdge(vToEMap, edgeId, vertexId) {
-  let sourceVertexEdgeList = vToEMap.get(vertexId);
-  if (sourceVertexEdgeList) {
-    sourceVertexEdgeList = sourceVertexEdgeList.filter(
-      presentEdge => presentEdge.id !== edgeId
-    );
-  }
-  if (!sourceVertexEdgeList || !sourceVertexEdgeList.length) {
-    vToEMap.delete(vertexId);
-  } else {
-    vToEMap.set(vertexId, sourceVertexEdgeList);
-  }
-}
-
-const getViewport = memoizeOne(
-  (scrollLeft, scrollTop, clientWidth, clientHeight) => ({
-    xMin: scrollLeft,
-    xMax: scrollLeft + clientWidth,
-    yMin: scrollTop,
-    yMax: scrollTop + clientHeight
-  })
-);
-
-function removeNode(intervalTree, intervalTreeNodes, nodeId) {
-  if (!intervalTreeNodes[nodeId]) {
-    return;
-  }
-  intervalTree.remove(intervalTreeNodes[nodeId]);
-  delete intervalTreeNodes[nodeId];
-}
-
-function makeXIntervalForEdge(edge, v1, v2) {
-  const x1 = Math.min(v1.left, v2.left) || 0;
-  const x2 = Math.max(
-    (v1.left || 0) + (v1.width || 0),
-    (v2.left || 0) + (v2.width || 0)
-  );
-  return [x1, x2, edge];
-}
-
-function makeYIntervalForEdge(edge, v1, v2) {
-  const y1 = Math.min(v1.top, v2.top) || 0;
-  const y2 = Math.max(
-    (v1.top || 0) + (v1.height || 0),
-    (v2.top || 0) + (v2.height || 0)
-  );
-  return [y1, y2, edge];
-}
+import { MARGIN, DEFAULT_CONTAINER_RECT } from "./constants";
 
 class Diagram extends React.PureComponent {
   constructor(props) {
@@ -393,23 +269,26 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  getVisibleEdges() {
-    const { scroll, container, version } = this.state;
+  getVisibleEdges(zoom = 1) {
+    const { scroll, version } = this.state;
+    const { width, height } = this.containerRef.current
+      ? this.containerRef.current.getBoundingClientRect()
+      : DEFAULT_CONTAINER_RECT;
 
     return getVisibleEdges(
-      getViewport(scroll.left, scroll.top, container.width, container.height),
+      getViewport(scroll.left, scroll.top, width, height, zoom),
       this.xIntervalTree,
       this.yIntervalTree,
       version
     );
   }
 
-  getVisibleVertices() {
+  getVisibleVertices(zoom = 1) {
     const { version } = this.state;
 
     return getVisibleVertices(
       this.verticesMap,
-      this.getVisibleEdges(),
+      this.getVisibleEdges(zoom),
       version
     );
   }
@@ -448,10 +327,10 @@ class Diagram extends React.PureComponent {
     return this.props.renderBackground(x, y);
   }
 
-  renderVertices(vertices) {
+  renderVertices(vertices, zoom) {
     return vertices.map(({ vertex, index }) => (
       <React.Fragment key={vertex.id}>
-        {this.props.renderVertex({ vertex, index })}
+        {this.props.renderVertex({ vertex, index, zoom })}
       </React.Fragment>
     ));
   }
@@ -481,29 +360,46 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  render() {
-    const visibleVerticesMap = this.getVisibleVertices();
-    const edges = this.getVisibleEdges();
+  renderChildren(extremeX, extremeY, zoom = 1) {
+    const verticesMap = this.getVisibleVertices(zoom);
+    const edges = this.getVisibleEdges(zoom);
+    const vertices = [...verticesMap.values()];
 
-    const vertices = [...visibleVerticesMap.values()];
+    return (
+      <React.Fragment>
+        {this.renderVertices(vertices, zoom)}
+        {this.renderEdges(edges, vertices)}
+        {this.renderSentinel(extremeX, extremeY)}
+        {this.renderBackground(extremeX, extremeY)}
+      </React.Fragment>
+    );
+  }
+
+  render() {
     const [extremeX, extremeY] = this.getExtremeXAndY();
 
-    const mergedStyles = _merge(
-      { height: "100%", overflow: "auto", position: "relative" },
-      this.props.diagramContainerStyles
-    );
+    if (this.props.enableZoom) {
+      return (
+        <PanAndZoomContainer
+          handleScroll={this.handleScroll}
+          containerRef={this.containerRef}
+          renderPanAndZoomControls={this.props.renderPanAndZoomControls}
+          scroll={this.state.scroll}
+          contentSpan={{ x: extremeX, y: extremeY }}
+        >
+          {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
+        </PanAndZoomContainer>
+      );
+    }
 
     return (
       <div
-        style={mergedStyles}
+        style={{ height: "100%", overflow: "auto", position: "relative" }}
         ref={this.containerRef}
         className="diagramContainer"
         onScroll={this.handleScroll}
       >
-        {this.renderVertices(vertices)}
-        {this.renderEdges(edges, vertices)}
-        {this.renderSentinel(extremeX, extremeY)}
-        {this.renderBackground(extremeX, extremeY)}
+        {this.renderChildren(extremeX, extremeY)}
       </div>
     );
   }
@@ -527,12 +423,14 @@ Diagram.propTypes = {
     canDrop: PropTypes.func,
     hoverClass: PropTypes.string
   }),
+  enableZoom: PropTypes.bool,
   renderOverlays: PropTypes.func,
   renderBackground: PropTypes.func
 };
 
 Diagram.defaultProps = {
   edges: [],
+  enableZoom: false,
   renderBackground() {
     return null;
   },
