@@ -202,6 +202,15 @@ export function makeYIntervalForEdge(edge, v1, v2) {
   return [y1, y2, edge];
 }
 
+/*
+ * If, flowchart content is smaller than actual length of the container-axis (X or Y),
+ * we need to shift origin to center of axis instead of (X:0 or Y:0),
+ * So that content remains in center of the container.
+ * In order to shift content to center we need to translate axis coordinate to (axisLength - containerLength)/2
+ *
+ * Else, Just use origin shift as per use-pan-and-zoom library
+ */
+
 export const getTranslate3DCoordinates = (
   clientWidth,
   clientHeight,
@@ -250,6 +259,15 @@ const getScaledViewportDimensions = (
     clientHeight: clientHeight * scale
   };
 };
+
+/*
+ * On changing zoom-level, we need to move scrollbar accordingly,
+ * so that the center-of-content remain the same as it was on previous zoom.
+ *
+ * In order to make sure that center of content still persists at center of current viewport,
+ * we need to shift scrollBar to (scale* prevScroll) +/- ((actual content exposed/removed to viewport)/2),
+ * content exposed/removed signifies the part of content which is visible/hidden on inc/dec zoom to accommodate the fixed browser viewport
+ */
 
 export const getContainerScroll = (
   scrollLeft,
