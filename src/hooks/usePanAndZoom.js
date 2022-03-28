@@ -22,12 +22,12 @@ const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
   });
 
   const incrementZoom = useCallback(() => {
-    const incrementedZoom = Math.floor(zoom / STEP_SIZE + 1) * STEP_SIZE;
+    const incrementedZoom = zoom + STEP_SIZE;
     setZoom(incrementedZoom, CENTER);
   }, [zoom, setZoom]);
 
   const decrementZoom = useCallback(() => {
-    const decrementedZoom = Math.floor((zoom - 0.01) / STEP_SIZE) * STEP_SIZE;
+    const decrementedZoom = zoom - STEP_SIZE;
     setZoom(decrementedZoom, CENTER);
   }, [zoom, setZoom]);
 

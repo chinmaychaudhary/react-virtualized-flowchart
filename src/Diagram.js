@@ -23,7 +23,7 @@ import {
   makeYIntervalForEdge
 } from "./helper";
 
-import { MARGIN, DEFAULT_CONTAINER_RECT } from "./constants";
+import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from "./constants";
 
 class Diagram extends React.PureComponent {
   constructor(props) {
@@ -269,7 +269,7 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  getVisibleEdges(zoom = 1) {
+  getVisibleEdges(zoom) {
     const { scroll, version } = this.state;
     const { width, height } = this.containerRef.current
       ? this.containerRef.current.getBoundingClientRect()
@@ -283,7 +283,7 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  getVisibleVertices(zoom = 1) {
+  getVisibleVertices(zoom) {
     const { version } = this.state;
 
     return getVisibleVertices(
@@ -360,7 +360,7 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  renderChildren(extremeX, extremeY, zoom = 1) {
+  renderChildren(extremeX, extremeY, zoom) {
     const verticesMap = this.getVisibleVertices(zoom);
     const edges = this.getVisibleEdges(zoom);
     const vertices = [...verticesMap.values()];
@@ -399,7 +399,7 @@ class Diagram extends React.PureComponent {
         className="diagramContainer"
         onScroll={this.handleScroll}
       >
-        {this.renderChildren(extremeX, extremeY)}
+        {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
       </div>
     );
   }
