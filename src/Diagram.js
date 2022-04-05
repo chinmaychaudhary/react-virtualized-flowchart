@@ -20,11 +20,11 @@ import {
   getViewport,
   removeNode,
   makeXIntervalForEdge,
-  makeYIntervalForEdge
+  makeYIntervalForEdge,
+  getResizeObserver
 } from "./helper";
 
 import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from "./constants";
-
 class Diagram extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -47,7 +47,8 @@ class Diagram extends React.PureComponent {
   }
 
   componentDidMount() {
-    const { height, width } = this.containerRef.current.getBoundingClientRect();
+    const container = this.containerRef.current;
+    const { height, width } = container.getBoundingClientRect();
 
     this.setState({
       container: {
@@ -56,6 +57,26 @@ class Diagram extends React.PureComponent {
       },
       isContainerElReady: true
     });
+
+    const ResizeObserver = getResizeObserver();
+
+    this.containerResizeObserver = new ResizeObserver(([entry]) =>
+      this.setState(prevState => {
+        const { contentRect } = entry;
+        return {
+          ...prevState,
+          container: {
+            height: contentRect.height,
+            width: contentRect.width
+          }
+        };
+      })
+    );
+    this.containerResizeObserver.observe(container);
+  }
+
+  componentWillUnmount() {
+    this.containerResizeObserver.disconnect();
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {

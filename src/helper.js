@@ -1,5 +1,6 @@
 import _map from "lodash/map";
 import memoizeOne from "memoize-one";
+import ResizeObserverPolyfill from "resize-observer-polyfill";
 
 export function getAddedOrRemovedItems(prevItems, nextItems) {
   const prevMap = new Map(prevItems.map(i => [i.id, i]));
@@ -295,3 +296,8 @@ export const getContainerScroll = (
     scrollTop: scrollTopScaled + (scrollTop ? clientHeightScaled : 0)
   };
 };
+
+export const getResizeObserver = () =>
+  typeof window !== "undefined"
+    ? window.ResizeObserver || ResizeObserverPolyfill
+    : ResizeObserverPolyfill;
