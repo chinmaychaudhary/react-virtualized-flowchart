@@ -153,9 +153,11 @@ proto.remove = function(interval) {
       if (this.left && this.right) {
         var p = this;
         var n = this.left;
+        var traversedNodes = [];
         while (n.right) {
           p = n;
           n = n.right;
+          traversedNodes.push(p);
         }
         if (p === this) {
           n.right = this.right;
@@ -166,6 +168,9 @@ proto.remove = function(interval) {
           p.right = n.left;
           n.left = l;
           n.right = r;
+        }
+        for (var i = 0; i < traversedNodes.length; i++) {
+          traversedNodes[i].count -= n.leftPoints.length;
         }
         copy(this, n);
         this.count =
