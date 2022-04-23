@@ -185,6 +185,11 @@
   resolved "https://registry.yarnpkg.com/@babel/helper-plugin-utils/-/helper-plugin-utils-7.8.0.tgz#59ec882d43c21c544ccb51decaecb306b34a8231"
   integrity sha512-+hAlRGdf8fHQAyNnDBqTHQhwdLURLdrCROoWaEQYiQhk2sV9Rhs+GoFZZfMJExTq9HG8o2NX3uN2G90bFtmFdA==
 
+"@babel/helper-plugin-utils@^7.16.7":
+  version "7.16.7"
+  resolved "https://registry.npmjs.org/@babel/helper-plugin-utils/-/helper-plugin-utils-7.16.7.tgz#aa3a8ab4c3cceff8e65eb9e73d87dc4ff320b2f5"
+  integrity sha512-Qg3Nk7ZxpgMrsox6HreY1ZNKdBq7K72tDSliA6dCl5f007jR4ne8iD5UzuNnCJH2xBf2BEEVGr+/OL6Gdp7RxA==
+
 "@babel/helper-regex@^7.8.0":
   version "7.8.0"
   resolved "https://registry.yarnpkg.com/@babel/helper-regex/-/helper-regex-7.8.0.tgz#dde1d2d2070e292c19a8702075e945923aa1678b"
@@ -221,12 +226,24 @@
     "@babel/template" "^7.8.0"
     "@babel/types" "^7.8.0"
 
+"@babel/helper-skip-transparent-expression-wrappers@^7.16.0":
+  version "7.16.0"
+  resolved "https://registry.npmjs.org/@babel/helper-skip-transparent-expression-wrappers/-/helper-skip-transparent-expression-wrappers-7.16.0.tgz#0ee3388070147c3ae051e487eca3ebb0e2e8bb09"
+  integrity sha512-+il1gTy0oHwUsBQZyJvukbB4vPMdcYBrFHa0Uc4AizLxbq6BOYC51Rv4tWocX9BLBDLZ4kc6qUFpQ6HRgL+3zw==
+  dependencies:
+    "@babel/types" "^7.16.0"
+
 "@babel/helper-split-export-declaration@^7.8.0":
   version "7.8.0"
   resolved "https://registry.yarnpkg.com/@babel/helper-split-export-declaration/-/helper-split-export-declaration-7.8.0.tgz#ed10cb03b07454c0d40735fad4e9c9711e739588"
   integrity sha512-YhYFhH4T6DlbT6CPtVgLfC1Jp2gbCawU/ml7WJvUpBg01bCrXSzTYMZZXbbIGjq/kHmK8YUATxTppcRGzj31pA==
   dependencies:
     "@babel/types" "^7.8.0"
+
+"@babel/helper-validator-identifier@^7.16.7":
+  version "7.16.7"
+  resolved "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.16.7.tgz#e8c602438c4a8195751243da9031d1607d247cad"
+  integrity sha512-hsEnFemeiW4D08A5gUAZxLBTXpZ39P+a+DGDsHw1yxqyQ/jzFEnxf5uTEGp+3bzAbNOxU1paTgYS4ECU/IgfDw==
 
 "@babel/helper-wrap-function@^7.8.0":
   version "7.8.0"
@@ -310,6 +327,15 @@
     "@babel/helper-plugin-utils" "^7.8.0"
     "@babel/plugin-syntax-optional-catch-binding" "^7.8.0"
 
+"@babel/plugin-proposal-optional-chaining@^7.16.7":
+  version "7.16.7"
+  resolved "https://registry.npmjs.org/@babel/plugin-proposal-optional-chaining/-/plugin-proposal-optional-chaining-7.16.7.tgz#7cd629564724816c0e8a969535551f943c64c39a"
+  integrity sha512-eC3xy+ZrUcBtP7x+sq62Q/HYd674pPTb/77XZMb5wbDPGWIdUbSr4Agr052+zaUPSb+gGRnjxXfKFvx5iMJ+DA==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.16.7"
+    "@babel/helper-skip-transparent-expression-wrappers" "^7.16.0"
+    "@babel/plugin-syntax-optional-chaining" "^7.8.3"
+
 "@babel/plugin-proposal-unicode-property-regex@^7.7.4":
   version "7.8.0"
   resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-unicode-property-regex/-/plugin-proposal-unicode-property-regex-7.8.0.tgz#9e1c0481863485052bae8ac024fca7028e24ee31"
@@ -357,6 +383,13 @@
   version "7.8.0"
   resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-optional-catch-binding/-/plugin-syntax-optional-catch-binding-7.8.0.tgz#180c7bdd6b7fd81cc6d18269de12d5ddd60cabce"
   integrity sha512-EIgJVy+u1RvR2gJfX4ReLwAupO/twllUue1wPrRxhu18+eC3bGTEcOSXLQdaE9ya9NG1rE0eQs0GSiloUGFEwg==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.8.0"
+
+"@babel/plugin-syntax-optional-chaining@^7.8.3":
+  version "7.8.3"
+  resolved "https://registry.npmjs.org/@babel/plugin-syntax-optional-chaining/-/plugin-syntax-optional-chaining-7.8.3.tgz#4f69c2ab95167e0180cd5336613f8c5788f7d48a"
+  integrity sha512-KoK9ErH1MBlCPxV0VANkXW2/dw4vlbGDrFgz8bmUsBGYkFRcbRwMh6cIJubdPrkxRwuGdtCk0v/wPTKbQgBjkg==
   dependencies:
     "@babel/helper-plugin-utils" "^7.8.0"
 
@@ -769,6 +802,19 @@
     esutils "^2.0.2"
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
+
+"@babel/types@^7.16.0":
+  version "7.17.0"
+  resolved "https://registry.npmjs.org/@babel/types/-/types-7.17.0.tgz#a826e368bccb6b3d84acd76acad5c0d87342390b"
+  integrity sha512-TmKSNO4D5rzhL5bjWFcVHHLETzfQ/AmbKpKPOSjlP0WoHZ6L911fgoOKY4Alp/emzG4cHJdyN49zpgkbXFEHHw==
+  dependencies:
+    "@babel/helper-validator-identifier" "^7.16.7"
+    to-fast-properties "^2.0.0"
+
+"@flatten-js/interval-tree@^1.0.18":
+  version "1.0.18"
+  resolved "https://prod-nexus.sprinklr.com/nexus/repository/npm/@flatten-js/interval-tree/-/interval-tree-1.0.18.tgz#285c6d491e838ed0c60b7a4f143a5d20b7f41947"
+  integrity sha512-o72sZErW0Y1C82Cg7nk82ojJ/22EtmKyp5I3eNqgcOKFp/VCzetATYYjJIqOBBaR7FQ/MFj/ZpsmP38mL4TkYA==
 
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.0"

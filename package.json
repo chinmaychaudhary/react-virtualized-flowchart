@@ -6,6 +6,7 @@
   "main": "src/index.js",
   "homepage": "https://chicho17.github.io/react-virtualized-flowchart",
   "dependencies": {
+    "@flatten-js/interval-tree": "^1.0.18",
     "jsplumb": "2.9.0",
     "lodash": "^4.17.15",
     "memoize-one": "^5.0.0",
@@ -19,6 +20,7 @@
     "@babel/cli": "7.7.4",
     "@babel/core": "7.7.4",
     "@babel/plugin-proposal-class-properties": "7.7.4",
+    "@babel/plugin-proposal-optional-chaining": "^7.16.7",
     "@babel/plugin-transform-react-jsx-source": "7.7.4",
     "@babel/plugin-transform-runtime": "7.7.4",
     "@babel/preset-env": "7.7.4",

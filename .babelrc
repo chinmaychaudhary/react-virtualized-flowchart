@@ -12,5 +12,5 @@
     ],
     "@babel/preset-react"
   ],
-  "plugins": ["lodash", "@babel/plugin-proposal-class-properties", "@babel/plugin-transform-runtime", "@babel/plugin-transform-react-jsx-source"]
+  "plugins": ["lodash", "@babel/plugin-proposal-class-properties", "@babel/plugin-transform-runtime", "@babel/plugin-transform-react-jsx-source","@babel/plugin-proposal-optional-chaining"]
 }
