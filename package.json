@@ -1,10 +1,10 @@
 {
   "name": "react-virtualized-flowchart",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Flowchart",
   "keywords": [],
   "main": "src/index.js",
-  "homepage": "https://chicho17.github.io/react-virtualized-flowchart",
+  "homepage": "https://chinmayhem.github.io/react-virtualized-flowchart",
   "dependencies": {
     "@flatten-js/interval-tree": "^1.0.18",
     "jsplumb": "2.9.0",
