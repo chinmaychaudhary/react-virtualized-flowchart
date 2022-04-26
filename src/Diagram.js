@@ -6,7 +6,8 @@ import invariant from "invariant";
 import Edges from "./Edges";
 import PanAndZoomContainer from "./PanAndZoomContainer";
 
-import createIntervalTree from "./lib/intervalTree";
+import IntervalTree from "@flatten-js/interval-tree";
+
 import {
   getAddedOrRemovedItems,
   getXUpper,
@@ -132,7 +133,7 @@ class Diagram extends React.PureComponent {
 
   addToXIntervalTree = (edge, verticesMap) => {
     const edgeId = edge.id;
-    if (this.xIntervalTreeNodes[edgeId]) {
+    if (this.treeNodeById[edgeId]?.xInterval) {
       return;
     }
 
@@ -146,14 +147,18 @@ class Diagram extends React.PureComponent {
       sourceVertex.vertex,
       targetVertex.vertex
     );
-    this.xIntervalTreeNodes[edgeId] = interval;
-    this.xIntervalTree.insert(interval);
+    this.treeNodeById[edgeId] = {
+      ...this.treeNodeById[edgeId],
+      xInterval: interval,
+      edge
+    };
+    this.xIntervalTree.insert(interval, edgeId);
   };
 
   addToYIntervalTree = (edge, verticesMap) => {
     const edgeId = edge.id;
 
-    if (this.yIntervalTreeNodes[edgeId]) {
+    if (this.treeNodeById[edgeId]?.yInterval) {
       return;
     }
 
@@ -168,11 +173,16 @@ class Diagram extends React.PureComponent {
       targetVertex.vertex
     );
 
-    this.yIntervalTreeNodes[edgeId] = interval;
-    this.yIntervalTree.insert(interval);
+    this.treeNodeById[edgeId] = {
+      ...this.treeNodeById[edgeId],
+      yInterval: interval,
+      edge
+    };
+    this.yIntervalTree.insert(interval, edgeId);
   };
 
   initIntervalTrees(edges, verticesMap) {
+    this.treeNodeById = {};
     this.initXIntervalTree(edges, verticesMap);
     this.initYIntervalTree(edges, verticesMap);
   }
@@ -196,14 +206,12 @@ class Diagram extends React.PureComponent {
   };
 
   initXIntervalTree(edges, verticesMap) {
-    this.xIntervalTree = createIntervalTree();
-    this.xIntervalTreeNodes = {};
+    this.xIntervalTree = new IntervalTree();
     edges.forEach(edge => this.addToXIntervalTree(edge, verticesMap));
   }
 
   initYIntervalTree(edges, verticesMap) {
-    this.yIntervalTree = createIntervalTree();
-    this.yIntervalTreeNodes = {};
+    this.yIntervalTree = new IntervalTree();
     edges.forEach(edge => this.addToYIntervalTree(edge, verticesMap));
   }
 
@@ -212,8 +220,12 @@ class Diagram extends React.PureComponent {
       const vertexId = vertex.id;
       const edges = verticesToEdgesMap.get(vertexId) || [];
       edges.forEach(edge => {
-        removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edge.id);
-        removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edge.id);
+        removeNode(
+          this.xIntervalTree,
+          this.yIntervalTree,
+          this.treeNodeById,
+          edge.id
+        );
       });
     });
     itemsAdded.forEach(vertex => {
@@ -227,42 +239,15 @@ class Diagram extends React.PureComponent {
   }
 
   updateEdges({ itemsAdded, itemsRemoved }, verticesMap) {
-    const xIntervalIdToIndex = new Map(
-      this.xIntervalTree.intervals.map(([a, b, edge], index) => [
-        edge.id,
-        index
-      ])
-    );
-    const xSortedItemsToRemove = [...itemsRemoved].sort(
-      (itemA, itemB) =>
-        (xIntervalIdToIndex.get(itemA.id) || 0) -
-        (xIntervalIdToIndex.get(itemB.id) || 0)
-    );
-
-    const yIntervalIdToIndex = new Map(
-      this.yIntervalTree.intervals.map(([a, b, edge], index) => [
-        edge.id,
-        index
-      ])
-    );
-    const ySortedItemsToRemove = [...itemsRemoved].sort(
-      (itemA, itemB) =>
-        (yIntervalIdToIndex.get(itemA.id) || 0) -
-        (yIntervalIdToIndex.get(itemB.id) || 0)
-    );
-
     itemsRemoved.forEach(edge => {
+      const edgeId = edge.id;
       this.removeEdgeFromVerticesToEdgesMap(edge);
-    });
-
-    xSortedItemsToRemove.forEach(edge => {
-      const edgeId = edge.id;
-      removeNode(this.xIntervalTree, this.xIntervalTreeNodes, edgeId);
-    });
-
-    ySortedItemsToRemove.forEach(edge => {
-      const edgeId = edge.id;
-      removeNode(this.yIntervalTree, this.yIntervalTreeNodes, edgeId);
+      removeNode(
+        this.xIntervalTree,
+        this.yIntervalTree,
+        this.treeNodeById,
+        edgeId
+      );
     });
 
     itemsAdded.forEach(edge => {
@@ -300,6 +285,7 @@ class Diagram extends React.PureComponent {
       getViewport(scroll.left, scroll.top, width, height, zoom),
       this.xIntervalTree,
       this.yIntervalTree,
+      this.treeNodeById,
       version
     );
   }

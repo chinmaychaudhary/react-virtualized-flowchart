@@ -107,32 +107,19 @@ export const getVisibleVertices = memoizeOne(
 );
 
 export const getVisibleEdges = memoizeOne(
-  (viewport, xIntervalTree, yIntervalTree, version) => {
-    const xEdgesMap = new Map();
-    const yEdgesMap = new Map();
-    const visibleVertices = new Map();
-    xIntervalTree.queryInterval(
-      viewport.xMin,
-      viewport.xMax,
-      ([low, high, edge]) => {
-        xEdgesMap.set(edge.id, edge);
-      }
-    );
-    yIntervalTree.queryInterval(
-      viewport.yMin,
-      viewport.yMax,
-      ([low, high, edge]) => {
-        yEdgesMap.set(edge.id, edge);
-      }
-    );
-
-    xEdgesMap.forEach((edge, edgeId) => {
-      if (yEdgesMap.has(edgeId)) {
-        visibleVertices.set(edgeId, edge);
+  (viewport, xIntervalTree, yIntervalTree, treeNodeById, version) => {
+    const yEdgesSet = new Set();
+    const visibleEdges = new Map();
+    yIntervalTree.search([viewport.yMin, viewport.yMax], edgeId => {
+      yEdgesSet.add(edgeId);
+    });
+    xIntervalTree.search([viewport.xMin, viewport.xMax], edgeId => {
+      if (yEdgesSet.has(edgeId)) {
+        visibleEdges.set(edgeId, treeNodeById[edgeId].edge);
       }
     });
 
-    return visibleVertices;
+    return visibleEdges;
   }
 );
 
@@ -177,12 +164,17 @@ export const getViewport = memoizeOne(
   }
 );
 
-export function removeNode(intervalTree, intervalTreeNodes, nodeId) {
-  if (!intervalTreeNodes[nodeId]) {
-    return;
+export function removeNode(xIntervalTree, yIntervalTree, treeNodeById, nodeId) {
+  const treeNode = treeNodeById[nodeId];
+  if (treeNode) {
+    if (treeNode?.xInterval) {
+      xIntervalTree.remove(treeNode.xInterval, nodeId);
+    }
+    if (treeNode?.yInterval) {
+      yIntervalTree.remove(treeNode.yInterval, nodeId);
+    }
+    delete treeNodeById[nodeId];
   }
-  intervalTree.remove(intervalTreeNodes[nodeId]);
-  delete intervalTreeNodes[nodeId];
 }
 
 export function makeXIntervalForEdge(edge, v1, v2) {
@@ -191,7 +183,7 @@ export function makeXIntervalForEdge(edge, v1, v2) {
     (v1.left || 0) + (v1.width || 0),
     (v2.left || 0) + (v2.width || 0)
   );
-  return [x1, x2, edge];
+  return [x1, x2];
 }
 
 export function makeYIntervalForEdge(edge, v1, v2) {
@@ -200,7 +192,7 @@ export function makeYIntervalForEdge(edge, v1, v2) {
     (v1.top || 0) + (v1.height || 0),
     (v2.top || 0) + (v2.height || 0)
   );
-  return [y1, y2, edge];
+  return [y1, y2];
 }
 
 /*
