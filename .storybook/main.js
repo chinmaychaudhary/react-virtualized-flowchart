@@ -5,4 +5,10 @@ module.exports = {
   core: {
     builder: '@storybook/builder-webpack5',
   },
+  babel: config => {
+    return {
+      ...config,
+      plugins: [...(config.plugins ?? []), ['@babel/plugin-proposal-class-properties', { loose: true }]],
+    };
+  },
 };
