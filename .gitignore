@@ -5,6 +5,9 @@
 /.pnp
 .pnp.js
 
+#storybook
+storybook-static
+
 # testing
 /coverage
 
@@ -18,6 +21,7 @@
 .env.test.local
 .env.production.local
 .idea/
+.vscode
 
 npm-debug.log*
 yarn-debug.log*
