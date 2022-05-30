@@ -27,5 +27,6 @@ git commit -m "upgrades react-virtualized-flowchart to ${next_version}"
 
 echo "Publishing react-virtualized-flowchart ${next_version}"
 
-npm publish lib
+cd lib
+npm publish
 echo "react-virtualized-flowchart ${next_version} is successfully published."

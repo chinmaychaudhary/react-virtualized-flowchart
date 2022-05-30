@@ -1,6 +1,6 @@
 import React, { useCallback, useReducer } from 'react';
 
-import Diagram from '../../Diagram';
+import Diagram from '../../src/Diagram';
 
 function init({ initialVertices, initialEdges }) {
   return { vertices: initialVertices, edges: initialEdges };
