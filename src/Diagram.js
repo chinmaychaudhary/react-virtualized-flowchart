@@ -1,12 +1,12 @@
-import React from "react";
-import PropTypes from "prop-types";
-import _throttle from "lodash/throttle";
-import invariant from "invariant";
+import React from 'react';
+import PropTypes from 'prop-types';
+import _throttle from 'lodash/throttle';
+import invariant from 'invariant';
 
-import Edges from "./Edges";
-import PanAndZoomContainer from "./PanAndZoomContainer";
+import Edges from './Edges';
+import PanAndZoomContainer from './PanAndZoomContainer';
 
-import IntervalTree from "@flatten-js/interval-tree";
+import IntervalTree from '@flatten-js/interval-tree';
 
 import {
   getAddedOrRemovedItems,
@@ -22,24 +22,24 @@ import {
   removeNode,
   makeXIntervalForEdge,
   makeYIntervalForEdge,
-  getResizeObserver
-} from "./helper";
+  getResizeObserver,
+} from './helper';
 
-import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from "./constants";
+import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from './constants';
 class Diagram extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
       scroll: {
         left: 0,
-        top: 0
+        top: 0,
       },
       container: {
         height: 0,
-        width: 0
+        width: 0,
       },
       version: 0,
-      isContainerElReady: false
+      isContainerElReady: false,
     };
     this.containerRef = React.createRef();
     const { verticesMap } = this.setVertices(props.vertices);
@@ -54,9 +54,9 @@ class Diagram extends React.PureComponent {
     this.setState({
       container: {
         height,
-        width
+        width,
       },
-      isContainerElReady: true
+      isContainerElReady: true,
     });
 
     const ResizeObserver = getResizeObserver();
@@ -68,8 +68,8 @@ class Diagram extends React.PureComponent {
           ...prevState,
           container: {
             height: contentRect.height,
-            width: contentRect.width
-          }
+            width: contentRect.width,
+          },
         };
       })
     );
@@ -90,33 +90,23 @@ class Diagram extends React.PureComponent {
     }
 
     if (this.revalidateNodes) {
-      this.verticesToBeValidated.forEach(vertex =>
-        this.plumbInstance.revalidate(vertex.id)
-      );
+      this.verticesToBeValidated.forEach(vertex => this.plumbInstance.revalidate(vertex.id));
       this.revalidateNodes = false;
     }
 
     if (prevProps.edges !== this.props.edges) {
-      verticesToEdgesMap = this.updateEdges(
-        getAddedOrRemovedItems(prevProps.edges, this.props.edges),
-        verticesMap
-      ).verticesToEdgesMap;
+      verticesToEdgesMap = this.updateEdges(getAddedOrRemovedItems(prevProps.edges, this.props.edges), verticesMap)
+        .verticesToEdgesMap;
       shouldTriggerRender = true;
     }
 
     if (didVerticesChange) {
-      const { itemsAdded, itemsRemoved } = getAddedOrRemovedItems(
-        prevProps.vertices,
-        this.props.vertices
-      );
+      const { itemsAdded, itemsRemoved } = getAddedOrRemovedItems(prevProps.vertices, this.props.vertices);
 
       this.revalidateNodes = true;
       this.verticesToBeValidated = itemsAdded;
 
-      this.updateIntervalTrees(
-        { itemsAdded, itemsRemoved },
-        verticesToEdgesMap
-      );
+      this.updateIntervalTrees({ itemsAdded, itemsRemoved }, verticesToEdgesMap);
       shouldTriggerRender = true;
     }
 
@@ -142,15 +132,11 @@ class Diagram extends React.PureComponent {
     const targetVertex = verticesMap.get(edge.targetId);
     invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
 
-    const interval = makeXIntervalForEdge(
-      edge,
-      sourceVertex.vertex,
-      targetVertex.vertex
-    );
+    const interval = makeXIntervalForEdge(edge, sourceVertex.vertex, targetVertex.vertex);
     this.treeNodeById[edgeId] = {
       ...this.treeNodeById[edgeId],
       xInterval: interval,
-      edge
+      edge,
     };
     this.xIntervalTree.insert(interval, edgeId);
   };
@@ -167,16 +153,12 @@ class Diagram extends React.PureComponent {
     const targetVertex = verticesMap.get(edge.targetId);
     invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
 
-    const interval = makeYIntervalForEdge(
-      edge,
-      sourceVertex.vertex,
-      targetVertex.vertex
-    );
+    const interval = makeYIntervalForEdge(edge, sourceVertex.vertex, targetVertex.vertex);
 
     this.treeNodeById[edgeId] = {
       ...this.treeNodeById[edgeId],
       yInterval: interval,
-      edge
+      edge,
     };
     this.yIntervalTree.insert(interval, edgeId);
   };
@@ -220,12 +202,7 @@ class Diagram extends React.PureComponent {
       const vertexId = vertex.id;
       const edges = verticesToEdgesMap.get(vertexId) || [];
       edges.forEach(edge => {
-        removeNode(
-          this.xIntervalTree,
-          this.yIntervalTree,
-          this.treeNodeById,
-          edge.id
-        );
+        removeNode(this.xIntervalTree, this.yIntervalTree, this.treeNodeById, edge.id);
       });
     });
     itemsAdded.forEach(vertex => {
@@ -242,12 +219,7 @@ class Diagram extends React.PureComponent {
     itemsRemoved.forEach(edge => {
       const edgeId = edge.id;
       this.removeEdgeFromVerticesToEdgesMap(edge);
-      removeNode(
-        this.xIntervalTree,
-        this.yIntervalTree,
-        this.treeNodeById,
-        edgeId
-      );
+      removeNode(this.xIntervalTree, this.yIntervalTree, this.treeNodeById, edgeId);
     });
 
     itemsAdded.forEach(edge => {
@@ -263,8 +235,8 @@ class Diagram extends React.PureComponent {
     this.setState({
       scroll: {
         left: target.scrollLeft,
-        top: target.scrollTop
-      }
+        top: target.scrollTop,
+      },
     });
   }, 0);
 
@@ -275,14 +247,21 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  getVisibleEdges(zoom) {
+  getVisibleEdges(zoom, overscan) {
     const { scroll, version } = this.state;
     const { width, height } = this.containerRef.current
       ? this.containerRef.current.getBoundingClientRect()
       : DEFAULT_CONTAINER_RECT;
+    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+    const viewportWithOverscanning = {
+      xMin: viewport.xMin - width,
+      xMax: viewport.xMax + width,
+      yMin: viewport.yMin - height,
+      yMax: viewport.yMax + height,
+    };
 
     return getVisibleEdges(
-      getViewport(scroll.left, scroll.top, width, height, zoom),
+      overscan ? viewportWithOverscanning : viewport,
       this.xIntervalTree,
       this.yIntervalTree,
       this.treeNodeById,
@@ -290,20 +269,14 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  getVisibleVertices(zoom) {
+  getVisibleVertices(zoom, overscan) {
     const { version } = this.state;
 
-    return getVisibleVertices(
-      this.verticesMap,
-      this.getVisibleEdges(zoom),
-      version
-    );
+    return getVisibleVertices(this.verticesMap, this.getVisibleEdges(zoom, overscan), version);
   }
 
   getExtremeXAndY() {
-    const { rightMostVertex, bottomMostVertex } = getExtremeVertices(
-      this.vertices
-    );
+    const { rightMostVertex, bottomMostVertex } = getExtremeVertices(this.vertices);
 
     const sentinelX = getXUpper(rightMostVertex) + MARGIN;
     const sentinelY = getYUpper(bottomMostVertex) + MARGIN;
@@ -321,10 +294,10 @@ class Diagram extends React.PureComponent {
         style={{
           height: 1,
           width: 1,
-          position: "absolute",
+          position: 'absolute',
           left: 0,
           top: 0,
-          transform: `translate3d(${x}px, ${y}px, 0)`
+          transform: `translate3d(${x}px, ${y}px, 0)`,
         }}
       />
     );
@@ -336,9 +309,7 @@ class Diagram extends React.PureComponent {
 
   renderVertices(vertices, zoom) {
     return vertices.map(({ vertex, index }) => (
-      <React.Fragment key={vertex.id}>
-        {this.props.renderVertex({ vertex, index, zoom })}
-      </React.Fragment>
+      <React.Fragment key={vertex.id}>{this.props.renderVertex({ vertex, index, zoom })}</React.Fragment>
     ));
   }
 
@@ -368,8 +339,11 @@ class Diagram extends React.PureComponent {
   }
 
   renderChildren(extremeX, extremeY, zoom) {
-    const verticesMap = this.getVisibleVertices(zoom);
-    const edges = this.getVisibleEdges(zoom);
+    const overscan = 1;
+    const verticesMap = this.getVisibleVertices(zoom, overscan);
+    const edges = this.getVisibleEdges(zoom, overscan);
+    const vertices2 = this.getVisibleVertices(zoom, 0);
+    console.log(verticesMap, vertices2);
     const vertices = [...verticesMap.values()];
 
     return (
@@ -401,7 +375,7 @@ class Diagram extends React.PureComponent {
 
     return (
       <div
-        style={{ height: "100%", overflow: "auto", position: "relative" }}
+        style={{ height: '100%', overflow: 'auto', position: 'relative' }}
         ref={this.containerRef}
         className="diagramContainer"
         onScroll={this.handleScroll}
@@ -417,22 +391,22 @@ Diagram.propTypes = {
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       left: PropTypes.number,
-      top: PropTypes.number
+      top: PropTypes.number,
     })
   ),
   draggableOptions: PropTypes.shape({
     grid: PropTypes.arrayOf(PropTypes.number),
     consumeStartEvent: PropTypes.bool,
     getConstrainingRectangle: PropTypes.func,
-    containment: PropTypes.bool
+    containment: PropTypes.bool,
   }),
   droppableOptions: PropTypes.shape({
     canDrop: PropTypes.func,
-    hoverClass: PropTypes.string
+    hoverClass: PropTypes.string,
   }),
   enableZoom: PropTypes.bool,
   renderOverlays: PropTypes.func,
-  renderBackground: PropTypes.func
+  renderBackground: PropTypes.func,
 };
 
 Diagram.defaultProps = {
@@ -444,7 +418,7 @@ Diagram.defaultProps = {
   areVerticesDraggable: true,
   renderOverlays() {
     return null;
-  }
+  },
 };
 
 export default Diagram;
