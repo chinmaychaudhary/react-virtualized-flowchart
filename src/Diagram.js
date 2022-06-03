@@ -275,14 +275,21 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  getVisibleEdges(zoom) {
+  getVisibleEdges(zoom, overscan) {
     const { scroll, version } = this.state;
     const { width, height } = this.containerRef.current
       ? this.containerRef.current.getBoundingClientRect()
       : DEFAULT_CONTAINER_RECT;
+    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+    const viewportWithOverscanning = {
+      xMin: viewport.xMin - width,
+      xMax: viewport.xMax + width,
+      yMin: viewport.yMin - height,
+      yMax: viewport.yMax + height
+    };
 
     return getVisibleEdges(
-      getViewport(scroll.left, scroll.top, width, height, zoom),
+      overscan ? viewportWithOverscanning : viewport,
       this.xIntervalTree,
       this.yIntervalTree,
       this.treeNodeById,
@@ -290,12 +297,12 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  getVisibleVertices(zoom) {
+  getVisibleVertices(zoom, overscan) {
     const { version } = this.state;
 
     return getVisibleVertices(
       this.verticesMap,
-      this.getVisibleEdges(zoom),
+      this.getVisibleEdges(zoom, overscan),
       version
     );
   }
@@ -368,8 +375,9 @@ class Diagram extends React.PureComponent {
   }
 
   renderChildren(extremeX, extremeY, zoom) {
-    const verticesMap = this.getVisibleVertices(zoom);
-    const edges = this.getVisibleEdges(zoom);
+    const overscan = 1;
+    const verticesMap = this.getVisibleVertices(zoom, overscan);
+    const edges = this.getVisibleEdges(zoom, overscan);
     const vertices = [...verticesMap.values()];
 
     return (
