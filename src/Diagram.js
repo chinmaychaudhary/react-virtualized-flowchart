@@ -253,13 +253,13 @@ class Diagram extends React.PureComponent {
       ? this.containerRef.current.getBoundingClientRect()
       : DEFAULT_CONTAINER_RECT;
     const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
-    const overscanWidth = this.props.overscan?.width ?? width;
-    const overscanHeight = this.props.overscan?.height ?? height;
+    const xOverscan = this.props.overscan?.x ?? width;
+    const yOverscan = this.props.overscan?.y ?? height;
     const viewportWithOverscanning = {
-      xMin: viewport.xMin - overscanWidth,
-      xMax: viewport.xMax + overscanWidth,
-      yMin: viewport.yMin - overscanHeight,
-      yMax: viewport.yMax + overscanHeight,
+      xMin: viewport.xMin - xOverscan,
+      xMax: viewport.xMax + xOverscan,
+      yMin: viewport.yMin - yOverscan,
+      yMax: viewport.yMax + yOverscan,
     };
 
     return getVisibleEdges(
@@ -407,8 +407,8 @@ Diagram.propTypes = {
   renderOverlays: PropTypes.func,
   renderBackground: PropTypes.func,
   overscan: PropTypes.shape({
-    width: PropTypes.number,
-    height: PropTypes.number,
+    x: PropTypes.number,
+    y: PropTypes.number,
   }),
 };
 
