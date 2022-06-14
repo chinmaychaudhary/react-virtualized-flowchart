@@ -5,6 +5,7 @@ import invariant from 'invariant';
 
 import Edges from './Edges';
 import PanAndZoomContainer from './PanAndZoomContainer';
+import Minimap from './Minimap';
 
 import IntervalTree from '@flatten-js/interval-tree';
 
@@ -247,19 +248,24 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
+  changeScrollWithMinimap = pos => {
+    this.updateScroll(pos);
+    this.containerRef.current.scrollTo(pos.scrollLeft, pos.scrollTop);
+  };
+
   getVisibleEdges(zoom) {
     const { scroll, version } = this.state;
     const { width, height } = this.containerRef.current
       ? this.containerRef.current.getBoundingClientRect()
       : DEFAULT_CONTAINER_RECT;
-    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+    this.viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
     const xOverscan = this.props.overscan?.x ?? width;
     const yOverscan = this.props.overscan?.y ?? height;
     const viewportWithOverscanning = {
-      xMin: viewport.xMin - xOverscan,
-      xMax: viewport.xMax + xOverscan,
-      yMin: viewport.yMin - yOverscan,
-      yMax: viewport.yMax + yOverscan,
+      xMin: this.viewport.xMin - xOverscan,
+      xMax: this.viewport.xMax + xOverscan,
+      yMin: this.viewport.yMin - yOverscan,
+      yMax: this.viewport.yMax + yOverscan,
     };
 
     return getVisibleEdges(
@@ -368,6 +374,13 @@ class Diagram extends React.PureComponent {
           contentSpan={{ x: extremeX, y: extremeY }}
         >
           {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
+          <Minimap
+            vertices={this.props.vertices}
+            extremeX={extremeX}
+            extremeY={extremeY}
+            viewport={this.viewport}
+            changeScrollHandler={this.changeScrollWithMinimap}
+          />
         </PanAndZoomContainer>
       );
     }
@@ -380,6 +393,20 @@ class Diagram extends React.PureComponent {
         onScroll={this.handleScroll}
       >
         {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
+        <Minimap
+          vertices={this.props.vertices}
+          extremeX={extremeX}
+          extremeY={extremeY}
+          viewport={this.viewport}
+          changeScrollHandler={this.changeScrollWithMinimap}
+          style={{
+            border: '2px solid black',
+            backgroundColor: 'rgba(20, 20, 20, 0.04)',
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+          }}
+        />
       </div>
     );
   }
