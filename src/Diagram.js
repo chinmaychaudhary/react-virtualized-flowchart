@@ -258,14 +258,14 @@ class Diagram extends React.PureComponent {
     const { width, height } = this.containerRef.current
       ? this.containerRef.current.getBoundingClientRect()
       : DEFAULT_CONTAINER_RECT;
-    this.viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
     const xOverscan = this.props.overscan?.x ?? width;
     const yOverscan = this.props.overscan?.y ?? height;
     const viewportWithOverscanning = {
-      xMin: this.viewport.xMin - xOverscan,
-      xMax: this.viewport.xMax + xOverscan,
-      yMin: this.viewport.yMin - yOverscan,
-      yMax: this.viewport.yMax + yOverscan,
+      xMin: viewport.xMin - xOverscan,
+      xMax: viewport.xMax + xOverscan,
+      yMin: viewport.yMin - yOverscan,
+      yMax: viewport.yMax + yOverscan,
     };
 
     return getVisibleEdges(
@@ -346,6 +346,29 @@ class Diagram extends React.PureComponent {
     );
   }
 
+  renderMinimap(extremeX, extremeY, zoom) {
+    const { scroll } = this.state;
+    const { width, height } = this.state.container;
+    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+
+    const minimapViewport = {
+      top: viewport.yMin,
+      left: viewport.xMin,
+      width: viewport.xMax - viewport.xMin,
+      height: viewport.yMax - viewport.yMin,
+    };
+
+    return (
+      <Minimap
+        vertices={this.props.vertices}
+        extremeX={extremeX}
+        extremeY={extremeY}
+        viewport={minimapViewport}
+        changeScrollHandler={this.changeScrollWithMinimap}
+      />
+    );
+  }
+
   renderChildren(extremeX, extremeY, zoom) {
     const verticesMap = this.getVisibleVertices(zoom);
     const edges = this.getVisibleEdges(zoom);
@@ -357,6 +380,7 @@ class Diagram extends React.PureComponent {
         {this.renderEdges(edges, vertices)}
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}
+        {this.renderMinimap(extremeX, extremeY, zoom)}
       </React.Fragment>
     );
   }
@@ -366,48 +390,33 @@ class Diagram extends React.PureComponent {
 
     if (this.props.enableZoom) {
       return (
-        <PanAndZoomContainer
-          handleScroll={this.handleScroll}
-          containerRef={this.containerRef}
-          renderPanAndZoomControls={this.props.renderPanAndZoomControls}
-          scroll={this.state.scroll}
-          contentSpan={{ x: extremeX, y: extremeY }}
-        >
-          {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
-          <Minimap
-            vertices={this.props.vertices}
-            extremeX={extremeX}
-            extremeY={extremeY}
-            viewport={this.viewport}
-            changeScrollHandler={this.changeScrollWithMinimap}
-          />
-        </PanAndZoomContainer>
+        <>
+          <div id="minimap-root" style={{ position: 'absolute', zIndex: 10 }} />
+          <PanAndZoomContainer
+            handleScroll={this.handleScroll}
+            containerRef={this.containerRef}
+            renderPanAndZoomControls={this.props.renderPanAndZoomControls}
+            scroll={this.state.scroll}
+            contentSpan={{ x: extremeX, y: extremeY }}
+          >
+            {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
+          </PanAndZoomContainer>
+        </>
       );
     }
 
     return (
-      <div
-        style={{ height: '100%', overflow: 'auto', position: 'relative' }}
-        ref={this.containerRef}
-        className="diagramContainer"
-        onScroll={this.handleScroll}
-      >
-        {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
-        <Minimap
-          vertices={this.props.vertices}
-          extremeX={extremeX}
-          extremeY={extremeY}
-          viewport={this.viewport}
-          changeScrollHandler={this.changeScrollWithMinimap}
-          style={{
-            border: '2px solid black',
-            backgroundColor: 'rgba(20, 20, 20, 0.04)',
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-          }}
-        />
-      </div>
+      <>
+        <div id="minimap-root" style={{ position: 'absolute', zIndex: 10 }} />
+        <div
+          style={{ height: '100%', overflow: 'auto', position: 'relative' }}
+          ref={this.containerRef}
+          className="diagramContainer"
+          onScroll={this.handleScroll}
+        >
+          {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
+        </div>
+      </>
     );
   }
 }
