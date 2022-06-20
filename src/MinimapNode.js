@@ -1,39 +1,33 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 const MinimapNode = ({ vertices, scalingFactor }) => {
-  const getMinimapNodes = () => {
-    return vertices.map(vertex => ({
-      top: vertex.top * scalingFactor.y,
-      left: vertex.left * scalingFactor.x,
-      width: vertex.width * scalingFactor.x,
-      height: vertex.height * scalingFactor.y,
-    }));
-  };
+  const minimapNodes = useMemo(
+    () =>
+      vertices.map(vertex => ({
+        top: vertex.top * scalingFactor.y,
+        left: vertex.left * scalingFactor.x,
+        width: vertex.width * scalingFactor.x,
+        height: vertex.height * scalingFactor.y,
+      })),
+    [vertices, scalingFactor.x, scalingFactor.y]
+  );
 
-  const renderNodes = () => {
-    const minimapNodes = getMinimapNodes();
-    return minimapNodes.map(node => (
-      <div
-        key={node.id}
-        style={{
-          boxSizing: 'border-box',
-          position: 'absolute',
-          top: `${node.top}px`,
-          left: `${node.left}px`,
-          width: `${node.width}px`,
-          height: `${node.height}px`,
-          backgroundColor: 'gold',
-          border: '1px solid black',
-        }}
-      />
-    ));
-  };
-
-  return renderNodes();
+  return minimapNodes.map(node => (
+    <canvas
+      key={node.id}
+      style={{
+        boxSizing: 'border-box',
+        position: 'absolute',
+        top: `${node.top}px`,
+        left: `${node.left}px`,
+        width: `${node.width}px`,
+        height: `${node.height}px`,
+        border: '1px solid rgba(20, 20, 20, 0.4)',
+      }}
+    />
+  ));
 };
-
-export default MinimapNode;
 
 MinimapNode.propTypes = {
   vertices: PropTypes.arrayOf(
@@ -48,3 +42,5 @@ MinimapNode.propTypes = {
     y: PropTypes.number,
   }),
 };
+
+export default MinimapNode;

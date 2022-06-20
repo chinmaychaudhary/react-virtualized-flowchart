@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
@@ -6,35 +6,40 @@ import PropTypes from 'prop-types';
 import MinimapNode from './MinimapNode';
 import MinimapViewport from './MinimapViewport';
 
-const MINIMAP_WIDTH = 350;
-const MINIMAP_HEIGHT = 250;
+const MINIMAP_WIDTH = 200;
+const MINIMAP_HEIGHT = 150;
 const MINIMAP_STYLE = {
   boxSizing: 'content-box',
   width: `${MINIMAP_WIDTH}px`,
   height: `${MINIMAP_HEIGHT}px`,
-  border: '2px solid black',
-  backgroundColor: 'rgba(20, 20, 20, 0.04)',
+  backgroundColor: 'rgba(240, 240, 240, 1)',
   position: 'fixed',
   bottom: '20px',
   left: '20px',
 };
 
 const Minimap = ({ vertices, extremeX, extremeY, viewport, changeScrollHandler }) => {
-  const scalingFactor = {
-    x: MINIMAP_WIDTH / extremeX,
-    y: MINIMAP_HEIGHT / extremeY,
-  };
+  const scalingFactor = useMemo(
+    () => ({
+      x: MINIMAP_WIDTH / extremeX,
+      y: MINIMAP_HEIGHT / extremeY,
+    }),
+    [extremeX, extremeY]
+  );
 
   const ref = useRef(null);
   const element = ref.current;
 
-  const handleClick = event => {
-    const newScrollPosition = {
-      scrollLeft: (event.clientX - element.offsetLeft - (viewport.width * scalingFactor.x) / 2) / scalingFactor.x,
-      scrollTop: (event.clientY - element.offsetTop - (viewport.height * scalingFactor.y) / 2) / scalingFactor.y,
-    };
-    changeScrollHandler(newScrollPosition);
-  };
+  const handleClick = useCallback(
+    event => {
+      const newScrollPosition = {
+        scrollLeft: (event.clientX - element.offsetLeft - (viewport.width * scalingFactor.x) / 2) / scalingFactor.x,
+        scrollTop: (event.clientY - element.offsetTop - (viewport.height * scalingFactor.y) / 2) / scalingFactor.y,
+      };
+      changeScrollHandler(newScrollPosition);
+    },
+    [element, viewport, scalingFactor]
+  );
 
   const el = document.getElementById('minimap-root');
 

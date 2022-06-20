@@ -248,7 +248,7 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  changeScrollWithMinimap = pos => {
+  scrollToPosition = pos => {
     this.updateScroll(pos);
     this.containerRef.current.scrollTo(pos.scrollLeft, pos.scrollTop);
   };
@@ -346,6 +346,10 @@ class Diagram extends React.PureComponent {
     );
   }
 
+  renderMinimapRoot() {
+    return <div id="minimap-root" style={{ position: 'absolute', zIndex: 10 }} />;
+  }
+
   renderMinimap(extremeX, extremeY, zoom) {
     const { scroll } = this.state;
     const { width, height } = this.state.container;
@@ -364,7 +368,7 @@ class Diagram extends React.PureComponent {
         extremeX={extremeX}
         extremeY={extremeY}
         viewport={minimapViewport}
-        changeScrollHandler={this.changeScrollWithMinimap}
+        changeScrollHandler={this.scrollToPosition}
       />
     );
   }
@@ -391,7 +395,7 @@ class Diagram extends React.PureComponent {
     if (this.props.enableZoom) {
       return (
         <>
-          <div id="minimap-root" style={{ position: 'absolute', zIndex: 10 }} />
+          {this.renderMinimapRoot()}
           <PanAndZoomContainer
             handleScroll={this.handleScroll}
             containerRef={this.containerRef}
@@ -407,7 +411,7 @@ class Diagram extends React.PureComponent {
 
     return (
       <>
-        <div id="minimap-root" style={{ position: 'absolute', zIndex: 10 }} />
+        {this.renderMinimapRoot()}
         <div
           style={{ height: '100%', overflow: 'auto', position: 'relative' }}
           ref={this.containerRef}

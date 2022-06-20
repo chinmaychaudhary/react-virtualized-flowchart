@@ -1,34 +1,36 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import { MINIMAP_WIDTH, MINIMAP_HEIGHT } from './Minimap';
 
 const MinimapViewport = ({ viewport, scalingFactor }) => {
-  const getMinimapViewport = () => ({
-    top: viewport?.top * scalingFactor.y,
-    left: viewport?.left * scalingFactor.x,
-    width: Math.min(viewport.width * scalingFactor.x, MINIMAP_WIDTH),
-    height: Math.min(viewport.height * scalingFactor.y, MINIMAP_HEIGHT),
-  });
-
-  const minimapViewport = getMinimapViewport();
+  const minimapViewport = useMemo(
+    () => ({
+      top: viewport?.top * scalingFactor.y,
+      left: viewport?.left * scalingFactor.x,
+      width: Math.min(viewport.width * scalingFactor.x, MINIMAP_WIDTH),
+      height: Math.min(viewport.height * scalingFactor.y, MINIMAP_HEIGHT),
+    }),
+    [viewport, scalingFactor]
+  );
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: `${minimapViewport.top}px`,
-        left: `${minimapViewport.left}px`,
-        width: `${minimapViewport.width}px`,
-        height: `${minimapViewport.height}px`,
-        backgroundColor: 'rgba(240, 240, 240, 0.3)',
-        border: '1px solid blue',
-      }}
-    />
+    <svg viewbox={`0 0 ${MINIMAP_WIDTH} ${MINIMAP_HEIGHT}`} width="100%">
+      <defs>
+        <mask id="mask" x="0" y="0" width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT}>
+          <rect x="0" y="0" width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} fill="#333" />
+          <rect
+            x={minimapViewport.left}
+            y={minimapViewport.top}
+            width={minimapViewport.width}
+            height={minimapViewport.height}
+          />
+        </mask>
+      </defs>
+      <rect x="0" y="0" width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} mask="url(#mask)" fill-opacity="0.7" />
+    </svg>
   );
 };
-
-export default MinimapViewport;
 
 MinimapViewport.propTypes = {
   viewport: PropTypes.shape({
@@ -42,3 +44,5 @@ MinimapViewport.propTypes = {
     y: PropTypes.number,
   }),
 };
+
+export default MinimapViewport;
