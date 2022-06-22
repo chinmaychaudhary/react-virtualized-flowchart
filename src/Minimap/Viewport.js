@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 
 import { MINIMAP_WIDTH, MINIMAP_HEIGHT } from './Minimap';
 
-const MinimapViewport = ({ viewport, scalingFactor }) => {
-  const minimapViewport = useMemo(
+const Viewport = ({ viewport, scalingFactor }) => {
+  const scaledViewport = useMemo(
     () => ({
       top: viewport?.top * scalingFactor.y,
       left: viewport?.left * scalingFactor.x,
@@ -15,24 +15,24 @@ const MinimapViewport = ({ viewport, scalingFactor }) => {
   );
 
   return (
-    <svg viewbox={`0 0 ${MINIMAP_WIDTH} ${MINIMAP_HEIGHT}`} width="100%">
+    <svg viewBox={`0 0 ${MINIMAP_WIDTH} ${MINIMAP_HEIGHT}`} width="100%">
       <defs>
         <mask id="mask" x="0" y="0" width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT}>
           <rect x="0" y="0" width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} fill="#333" />
           <rect
-            x={minimapViewport.left}
-            y={minimapViewport.top}
-            width={minimapViewport.width}
-            height={minimapViewport.height}
+            x={scaledViewport.left}
+            y={scaledViewport.top}
+            width={scaledViewport.width}
+            height={scaledViewport.height}
           />
         </mask>
       </defs>
-      <rect x="0" y="0" width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} mask="url(#mask)" fill-opacity="0.7" />
+      <rect x="0" y="0" width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} mask="url(#mask)" fillOpacity="0.7" />
     </svg>
   );
 };
 
-MinimapViewport.propTypes = {
+Viewport.propTypes = {
   viewport: PropTypes.shape({
     top: PropTypes.number,
     left: PropTypes.number,
@@ -45,4 +45,4 @@ MinimapViewport.propTypes = {
   }),
 };
 
-export default MinimapViewport;
+export default Viewport;

@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 
-const MinimapNode = ({ vertices, scalingFactor }) => {
-  const minimapNodes = useMemo(
+const Nodes = ({ vertices, scalingFactor }) => {
+  const nodes = useMemo(
     () =>
       vertices.map(vertex => ({
+        id: vertex.id,
         top: vertex.top * scalingFactor.y,
         left: vertex.left * scalingFactor.x,
         width: vertex.width * scalingFactor.x,
@@ -13,7 +14,7 @@ const MinimapNode = ({ vertices, scalingFactor }) => {
     [vertices, scalingFactor.x, scalingFactor.y]
   );
 
-  return minimapNodes.map(node => (
+  return nodes.map(node => (
     <canvas
       key={node.id}
       style={{
@@ -29,7 +30,7 @@ const MinimapNode = ({ vertices, scalingFactor }) => {
   ));
 };
 
-MinimapNode.propTypes = {
+Nodes.propTypes = {
   vertices: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -43,4 +44,4 @@ MinimapNode.propTypes = {
   }),
 };
 
-export default MinimapNode;
+export default Nodes;

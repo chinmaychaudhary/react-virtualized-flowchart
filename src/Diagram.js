@@ -5,7 +5,7 @@ import invariant from 'invariant';
 
 import Edges from './Edges';
 import PanAndZoomContainer from './PanAndZoomContainer';
-import Minimap from './Minimap';
+import Minimap from './minimap/Minimap';
 
 import IntervalTree from '@flatten-js/interval-tree';
 

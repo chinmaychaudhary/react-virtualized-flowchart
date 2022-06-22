@@ -3,8 +3,8 @@ import { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
-import MinimapNode from './MinimapNode';
-import MinimapViewport from './MinimapViewport';
+import Nodes from './Nodes';
+import Viewport from './Viewport';
 
 const MINIMAP_WIDTH = 200;
 const MINIMAP_HEIGHT = 150;
@@ -45,9 +45,9 @@ const Minimap = ({ vertices, extremeX, extremeY, viewport, changeScrollHandler }
 
   return el
     ? ReactDOM.createPortal(
-        <div className="minimap" ref={ref} style={MINIMAP_STYLE} onClick={e => handleClick(e)}>
-          <MinimapNode vertices={vertices} scalingFactor={scalingFactor} />
-          <MinimapViewport viewport={viewport} scalingFactor={scalingFactor} />
+        <div className="minimap" ref={ref} style={MINIMAP_STYLE} onClick={handleClick}>
+          <Nodes vertices={vertices} scalingFactor={scalingFactor} />
+          <Viewport viewport={viewport} scalingFactor={scalingFactor} />
         </div>,
         el
       )
