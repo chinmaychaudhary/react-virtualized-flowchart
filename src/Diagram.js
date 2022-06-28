@@ -347,7 +347,7 @@ class Diagram extends React.PureComponent {
   }
 
   renderMinimapRoot() {
-    return <div id="minimap-root" style={{ position: 'absolute', zIndex: 10 }} />;
+    return <div id="minimap-root" style={{ position: 'absolute', zIndex: 10, bottom: 0, left: 0 }} />;
   }
 
   renderMinimap(extremeX, extremeY, zoom) {
@@ -394,7 +394,7 @@ class Diagram extends React.PureComponent {
 
     if (this.props.enableZoom) {
       return (
-        <>
+        <div style={{ position: 'relative', height: '100%' }}>
           {this.renderMinimapRoot()}
           <PanAndZoomContainer
             handleScroll={this.handleScroll}
@@ -405,12 +405,12 @@ class Diagram extends React.PureComponent {
           >
             {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
           </PanAndZoomContainer>
-        </>
+        </div>
       );
     }
 
     return (
-      <>
+      <div style={{ position: 'relative', height: '100%' }}>
         {this.renderMinimapRoot()}
         <div
           style={{ height: '100%', overflow: 'auto', position: 'relative' }}
@@ -420,7 +420,7 @@ class Diagram extends React.PureComponent {
         >
           {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
         </div>
-      </>
+      </div>
     );
   }
 }
