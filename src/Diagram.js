@@ -347,7 +347,12 @@ class Diagram extends React.PureComponent {
   }
 
   renderMinimapRoot() {
-    return <div id="minimap-root" style={{ position: 'absolute', zIndex: 10, bottom: 0, left: 0 }} />;
+    return (
+      <div
+        id="minimap-root"
+        style={{ position: 'absolute', zIndex: 10, bottom: 0, left: 0, marginLeft: '20px', marginBottom: '20px' }}
+      />
+    );
   }
 
   renderMinimap(extremeX, extremeY, zoom) {

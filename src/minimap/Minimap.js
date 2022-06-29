@@ -13,7 +13,7 @@ const MINIMAP_STYLE = {
   width: `${MINIMAP_WIDTH}px`,
   height: `${MINIMAP_HEIGHT}px`,
   backgroundColor: 'rgba(240, 240, 240, 1)',
-  position: 'fixed',
+  border: '1px solid rgba(240, 240, 240, 1)',
   bottom: '20px',
   left: '20px',
 };
@@ -28,21 +28,19 @@ const Minimap = ({ vertices, extremeX, extremeY, viewport, changeScrollHandler }
   );
 
   const containerRef = useRef(null);
+  const el = document.getElementById('minimap-root');
 
   const handleClick = useCallback(
     event => {
+      const { top, left } = el.getBoundingClientRect();
       const newScrollPosition = {
-        scrollLeft:
-          (event.clientX - containerRef.current.offsetLeft - (viewport.width * scalingFactor.x) / 2) / scalingFactor.x,
-        scrollTop:
-          (event.clientY - containerRef.current.offsetTop - (viewport.height * scalingFactor.y) / 2) / scalingFactor.y,
+        scrollLeft: (event.clientX - left - (viewport.width * scalingFactor.x) / 2) / scalingFactor.x,
+        scrollTop: (event.clientY - top - (viewport.height * scalingFactor.y) / 2) / scalingFactor.y,
       };
       changeScrollHandler(newScrollPosition);
     },
     [viewport, scalingFactor]
   );
-
-  const el = document.getElementById('minimap-root');
 
   return el
     ? ReactDOM.createPortal(
