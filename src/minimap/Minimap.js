@@ -18,7 +18,7 @@ const MINIMAP_STYLE = {
   left: '20px',
 };
 
-const Minimap = ({ vertices, extremeX, extremeY, viewport, changeScrollHandler }) => {
+const Minimap = ({ vertices, extremeX, extremeY, viewport, changeScrollHandler, zoom }) => {
   const scalingFactor = useMemo(
     () => ({
       x: MINIMAP_WIDTH / extremeX,
@@ -34,8 +34,8 @@ const Minimap = ({ vertices, extremeX, extremeY, viewport, changeScrollHandler }
     event => {
       const { top, left } = el.getBoundingClientRect();
       const newScrollPosition = {
-        scrollLeft: (event.clientX - left - (viewport.width * scalingFactor.x) / 2) / scalingFactor.x,
-        scrollTop: (event.clientY - top - (viewport.height * scalingFactor.y) / 2) / scalingFactor.y,
+        scrollLeft: ((event.clientX - left - (viewport.width * scalingFactor.x) / 2) / scalingFactor.x) * zoom,
+        scrollTop: ((event.clientY - top - (viewport.height * scalingFactor.y) / 2) / scalingFactor.y) * zoom,
       };
       changeScrollHandler(newScrollPosition);
     },

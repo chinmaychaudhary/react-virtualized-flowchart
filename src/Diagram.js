@@ -373,6 +373,7 @@ class Diagram extends React.PureComponent {
         extremeX={extremeX}
         extremeY={extremeY}
         viewport={minimapViewport}
+        zoom={zoom}
         changeScrollHandler={this.scrollToPosition}
       />
     );
