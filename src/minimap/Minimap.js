@@ -13,7 +13,7 @@ const MINIMAP_STYLE = {
   width: `${MINIMAP_WIDTH}px`,
   height: `${MINIMAP_HEIGHT}px`,
   backgroundColor: 'rgba(240, 240, 240, 1)',
-  border: '1px solid rgba(240, 240, 240, 1)',
+  border: '1px solid rgb(216, 216, 216)',
   bottom: '20px',
   left: '20px',
 };
@@ -39,7 +39,7 @@ const Minimap = ({ vertices, extremeX, extremeY, viewport, changeScrollHandler, 
       };
       changeScrollHandler(newScrollPosition);
     },
-    [viewport, scalingFactor]
+    [viewport, scalingFactor, zoom]
   );
 
   return el
