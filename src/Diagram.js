@@ -370,8 +370,8 @@ class Diagram extends React.PureComponent {
     return (
       <Minimap
         vertices={this.props.vertices}
-        extremeX={extremeX}
-        extremeY={extremeY}
+        extremeX={Math.max(extremeX, width)}
+        extremeY={Math.max(extremeY, height)}
         viewport={minimapViewport}
         zoom={zoom}
         changeScrollHandler={this.scrollToPosition}
@@ -390,7 +390,7 @@ class Diagram extends React.PureComponent {
         {this.renderEdges(edges, vertices)}
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}
-        {this.props.enableMinimap && this.renderMinimap(extremeX, extremeY, zoom)}
+        {this.props.enableMinimap ? this.renderMinimap(extremeX, extremeY, zoom) : null}
       </React.Fragment>
     );
   }
@@ -401,7 +401,7 @@ class Diagram extends React.PureComponent {
     if (this.props.enableZoom) {
       return (
         <div style={{ position: 'relative', height: '100%' }}>
-          {this.props.enableMinimap && this.renderMinimapRoot()}
+          {this.props.enableMinimap ? this.renderMinimapRoot() : null}
           <PanAndZoomContainer
             handleScroll={this.handleScroll}
             containerRef={this.containerRef}
@@ -417,7 +417,7 @@ class Diagram extends React.PureComponent {
 
     return (
       <div style={{ position: 'relative', height: '100%' }}>
-        {this.props.enableMinimap && this.renderMinimapRoot()}
+        {this.props.enableMinimap ? this.renderMinimapRoot() : null}
         <div
           style={{ height: '100%', overflow: 'auto', position: 'relative' }}
           ref={this.containerRef}
