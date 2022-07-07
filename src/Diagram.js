@@ -390,7 +390,7 @@ class Diagram extends React.PureComponent {
         {this.renderEdges(edges, vertices)}
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}
-        {this.renderMinimap(extremeX, extremeY, zoom)}
+        {this.props.enableMinimap && this.renderMinimap(extremeX, extremeY, zoom)}
       </React.Fragment>
     );
   }
@@ -401,7 +401,7 @@ class Diagram extends React.PureComponent {
     if (this.props.enableZoom) {
       return (
         <div style={{ position: 'relative', height: '100%' }}>
-          {this.renderMinimapRoot()}
+          {this.props.enableMinimap && this.renderMinimapRoot()}
           <PanAndZoomContainer
             handleScroll={this.handleScroll}
             containerRef={this.containerRef}
@@ -417,7 +417,7 @@ class Diagram extends React.PureComponent {
 
     return (
       <div style={{ position: 'relative', height: '100%' }}>
-        {this.renderMinimapRoot()}
+        {this.props.enableMinimap && this.renderMinimapRoot()}
         <div
           style={{ height: '100%', overflow: 'auto', position: 'relative' }}
           ref={this.containerRef}
@@ -450,6 +450,7 @@ Diagram.propTypes = {
     hoverClass: PropTypes.string,
   }),
   enableZoom: PropTypes.bool,
+  enableMinimap: PropTypes.bool,
   renderOverlays: PropTypes.func,
   renderBackground: PropTypes.func,
   overscan: PropTypes.shape({
@@ -461,6 +462,7 @@ Diagram.propTypes = {
 Diagram.defaultProps = {
   edges: [],
   enableZoom: false,
+  enableMinimap: true,
   renderBackground() {
     return null;
   },
