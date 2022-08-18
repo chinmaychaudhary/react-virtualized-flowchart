@@ -1,12 +1,13 @@
-import React from "react";
-import PropTypes from "prop-types";
-import _throttle from "lodash/throttle";
-import invariant from "invariant";
+import React from 'react';
+import PropTypes from 'prop-types';
+import _throttle from 'lodash/throttle';
+import invariant from 'invariant';
 
-import Edges from "./Edges";
-import PanAndZoomContainer from "./PanAndZoomContainer";
+import Edges from './Edges';
+import PanAndZoomContainer from './PanAndZoomContainer';
+import Minimap from './minimap/Minimap';
 
-import IntervalTree from "@flatten-js/interval-tree";
+import IntervalTree from '@flatten-js/interval-tree';
 
 import {
   getAddedOrRemovedItems,
@@ -22,24 +23,24 @@ import {
   removeNode,
   makeXIntervalForEdge,
   makeYIntervalForEdge,
-  getResizeObserver
-} from "./helper";
+  getResizeObserver,
+} from './helper';
 
-import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from "./constants";
+import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from './constants';
 class Diagram extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
       scroll: {
         left: 0,
-        top: 0
+        top: 0,
       },
       container: {
         height: 0,
-        width: 0
+        width: 0,
       },
       version: 0,
-      isContainerElReady: false
+      isContainerElReady: false,
     };
     this.containerRef = React.createRef();
     const { verticesMap } = this.setVertices(props.vertices);
@@ -54,9 +55,9 @@ class Diagram extends React.PureComponent {
     this.setState({
       container: {
         height,
-        width
+        width,
       },
-      isContainerElReady: true
+      isContainerElReady: true,
     });
 
     const ResizeObserver = getResizeObserver();
@@ -68,8 +69,8 @@ class Diagram extends React.PureComponent {
           ...prevState,
           container: {
             height: contentRect.height,
-            width: contentRect.width
-          }
+            width: contentRect.width,
+          },
         };
       })
     );
@@ -90,33 +91,23 @@ class Diagram extends React.PureComponent {
     }
 
     if (this.revalidateNodes) {
-      this.verticesToBeValidated.forEach(vertex =>
-        this.plumbInstance.revalidate(vertex.id)
-      );
+      this.verticesToBeValidated.forEach(vertex => this.plumbInstance.revalidate(vertex.id));
       this.revalidateNodes = false;
     }
 
     if (prevProps.edges !== this.props.edges) {
-      verticesToEdgesMap = this.updateEdges(
-        getAddedOrRemovedItems(prevProps.edges, this.props.edges),
-        verticesMap
-      ).verticesToEdgesMap;
+      verticesToEdgesMap = this.updateEdges(getAddedOrRemovedItems(prevProps.edges, this.props.edges), verticesMap)
+        .verticesToEdgesMap;
       shouldTriggerRender = true;
     }
 
     if (didVerticesChange) {
-      const { itemsAdded, itemsRemoved } = getAddedOrRemovedItems(
-        prevProps.vertices,
-        this.props.vertices
-      );
+      const { itemsAdded, itemsRemoved } = getAddedOrRemovedItems(prevProps.vertices, this.props.vertices);
 
       this.revalidateNodes = true;
       this.verticesToBeValidated = itemsAdded;
 
-      this.updateIntervalTrees(
-        { itemsAdded, itemsRemoved },
-        verticesToEdgesMap
-      );
+      this.updateIntervalTrees({ itemsAdded, itemsRemoved }, verticesToEdgesMap);
       shouldTriggerRender = true;
     }
 
@@ -142,15 +133,11 @@ class Diagram extends React.PureComponent {
     const targetVertex = verticesMap.get(edge.targetId);
     invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
 
-    const interval = makeXIntervalForEdge(
-      edge,
-      sourceVertex.vertex,
-      targetVertex.vertex
-    );
+    const interval = makeXIntervalForEdge(edge, sourceVertex.vertex, targetVertex.vertex);
     this.treeNodeById[edgeId] = {
       ...this.treeNodeById[edgeId],
       xInterval: interval,
-      edge
+      edge,
     };
     this.xIntervalTree.insert(interval, edgeId);
   };
@@ -167,16 +154,12 @@ class Diagram extends React.PureComponent {
     const targetVertex = verticesMap.get(edge.targetId);
     invariant(targetVertex, `targetVertex missing for the edgeId - ${edgeId}`);
 
-    const interval = makeYIntervalForEdge(
-      edge,
-      sourceVertex.vertex,
-      targetVertex.vertex
-    );
+    const interval = makeYIntervalForEdge(edge, sourceVertex.vertex, targetVertex.vertex);
 
     this.treeNodeById[edgeId] = {
       ...this.treeNodeById[edgeId],
       yInterval: interval,
-      edge
+      edge,
     };
     this.yIntervalTree.insert(interval, edgeId);
   };
@@ -220,12 +203,7 @@ class Diagram extends React.PureComponent {
       const vertexId = vertex.id;
       const edges = verticesToEdgesMap.get(vertexId) || [];
       edges.forEach(edge => {
-        removeNode(
-          this.xIntervalTree,
-          this.yIntervalTree,
-          this.treeNodeById,
-          edge.id
-        );
+        removeNode(this.xIntervalTree, this.yIntervalTree, this.treeNodeById, edge.id);
       });
     });
     itemsAdded.forEach(vertex => {
@@ -242,12 +220,7 @@ class Diagram extends React.PureComponent {
     itemsRemoved.forEach(edge => {
       const edgeId = edge.id;
       this.removeEdgeFromVerticesToEdgesMap(edge);
-      removeNode(
-        this.xIntervalTree,
-        this.yIntervalTree,
-        this.treeNodeById,
-        edgeId
-      );
+      removeNode(this.xIntervalTree, this.yIntervalTree, this.treeNodeById, edgeId);
     });
 
     itemsAdded.forEach(edge => {
@@ -263,8 +236,8 @@ class Diagram extends React.PureComponent {
     this.setState({
       scroll: {
         left: target.scrollLeft,
-        top: target.scrollTop
-      }
+        top: target.scrollTop,
+      },
     });
   }, 0);
 
@@ -275,14 +248,28 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
+  scrollToPosition = pos => {
+    this.updateScroll(pos);
+    this.containerRef.current.scrollTo(pos.scrollLeft, pos.scrollTop);
+  };
+
   getVisibleEdges(zoom) {
     const { scroll, version } = this.state;
     const { width, height } = this.containerRef.current
       ? this.containerRef.current.getBoundingClientRect()
       : DEFAULT_CONTAINER_RECT;
+    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+    const xOverscan = this.props.overscan?.x ?? width;
+    const yOverscan = this.props.overscan?.y ?? height;
+    const viewportWithOverscanning = {
+      xMin: viewport.xMin - xOverscan,
+      xMax: viewport.xMax + xOverscan,
+      yMin: viewport.yMin - yOverscan,
+      yMax: viewport.yMax + yOverscan,
+    };
 
     return getVisibleEdges(
-      getViewport(scroll.left, scroll.top, width, height, zoom),
+      viewportWithOverscanning,
       this.xIntervalTree,
       this.yIntervalTree,
       this.treeNodeById,
@@ -293,17 +280,11 @@ class Diagram extends React.PureComponent {
   getVisibleVertices(zoom) {
     const { version } = this.state;
 
-    return getVisibleVertices(
-      this.verticesMap,
-      this.getVisibleEdges(zoom),
-      version
-    );
+    return getVisibleVertices(this.verticesMap, this.getVisibleEdges(zoom), version);
   }
 
   getExtremeXAndY() {
-    const { rightMostVertex, bottomMostVertex } = getExtremeVertices(
-      this.vertices
-    );
+    const { rightMostVertex, bottomMostVertex } = getExtremeVertices(this.vertices);
 
     const sentinelX = getXUpper(rightMostVertex) + MARGIN;
     const sentinelY = getYUpper(bottomMostVertex) + MARGIN;
@@ -321,10 +302,10 @@ class Diagram extends React.PureComponent {
         style={{
           height: 1,
           width: 1,
-          position: "absolute",
+          position: 'absolute',
           left: 0,
           top: 0,
-          transform: `translate3d(${x}px, ${y}px, 0)`
+          transform: `translate3d(${x}px, ${y}px, 0)`,
         }}
       />
     );
@@ -336,9 +317,7 @@ class Diagram extends React.PureComponent {
 
   renderVertices(vertices, zoom) {
     return vertices.map(({ vertex, index }) => (
-      <React.Fragment key={vertex.id}>
-        {this.props.renderVertex({ vertex, index, zoom })}
-      </React.Fragment>
+      <React.Fragment key={vertex.id}>{this.props.renderVertex({ vertex, index, zoom })}</React.Fragment>
     ));
   }
 
@@ -367,6 +346,39 @@ class Diagram extends React.PureComponent {
     );
   }
 
+  renderMinimapRoot() {
+    return (
+      <div
+        id="minimap-root"
+        style={{ position: 'absolute', zIndex: 10, bottom: 0, left: 0, marginLeft: '20px', marginBottom: '20px' }}
+      />
+    );
+  }
+
+  renderMinimap(extremeX, extremeY, zoom) {
+    const { scroll } = this.state;
+    const { width, height } = this.state.container;
+    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+
+    const minimapViewport = {
+      top: viewport.yMin,
+      left: viewport.xMin,
+      width: viewport.xMax - viewport.xMin,
+      height: viewport.yMax - viewport.yMin,
+    };
+
+    return (
+      <Minimap
+        vertices={this.props.vertices}
+        extremeX={Math.max(extremeX, width)}
+        extremeY={Math.max(extremeY, height)}
+        viewport={minimapViewport}
+        zoom={zoom}
+        changeScrollHandler={this.scrollToPosition}
+      />
+    );
+  }
+
   renderChildren(extremeX, extremeY, zoom) {
     const verticesMap = this.getVisibleVertices(zoom);
     const edges = this.getVisibleEdges(zoom);
@@ -378,6 +390,7 @@ class Diagram extends React.PureComponent {
         {this.renderEdges(edges, vertices)}
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}
+        {this.props.enableMinimap ? this.renderMinimap(extremeX, extremeY, zoom) : null}
       </React.Fragment>
     );
   }
@@ -387,26 +400,32 @@ class Diagram extends React.PureComponent {
 
     if (this.props.enableZoom) {
       return (
-        <PanAndZoomContainer
-          handleScroll={this.handleScroll}
-          containerRef={this.containerRef}
-          renderPanAndZoomControls={this.props.renderPanAndZoomControls}
-          scroll={this.state.scroll}
-          contentSpan={{ x: extremeX, y: extremeY }}
-        >
-          {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
-        </PanAndZoomContainer>
+        <div style={{ position: 'relative', height: '100%' }}>
+          {this.props.enableMinimap ? this.renderMinimapRoot() : null}
+          <PanAndZoomContainer
+            handleScroll={this.handleScroll}
+            containerRef={this.containerRef}
+            renderPanAndZoomControls={this.props.renderPanAndZoomControls}
+            scroll={this.state.scroll}
+            contentSpan={{ x: extremeX, y: extremeY }}
+          >
+            {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
+          </PanAndZoomContainer>
+        </div>
       );
     }
 
     return (
-      <div
-        style={{ height: "100%", overflow: "auto", position: "relative" }}
-        ref={this.containerRef}
-        className="diagramContainer"
-        onScroll={this.handleScroll}
-      >
-        {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
+      <div style={{ position: 'relative', height: '100%' }}>
+        {this.props.enableMinimap ? this.renderMinimapRoot() : null}
+        <div
+          style={{ height: '100%', overflow: 'auto', position: 'relative' }}
+          ref={this.containerRef}
+          className="diagramContainer"
+          onScroll={this.handleScroll}
+        >
+          {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
+        </div>
       </div>
     );
   }
@@ -417,34 +436,40 @@ Diagram.propTypes = {
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       left: PropTypes.number,
-      top: PropTypes.number
+      top: PropTypes.number,
     })
   ),
   draggableOptions: PropTypes.shape({
     grid: PropTypes.arrayOf(PropTypes.number),
     consumeStartEvent: PropTypes.bool,
     getConstrainingRectangle: PropTypes.func,
-    containment: PropTypes.bool
+    containment: PropTypes.bool,
   }),
   droppableOptions: PropTypes.shape({
     canDrop: PropTypes.func,
-    hoverClass: PropTypes.string
+    hoverClass: PropTypes.string,
   }),
   enableZoom: PropTypes.bool,
+  enableMinimap: PropTypes.bool,
   renderOverlays: PropTypes.func,
-  renderBackground: PropTypes.func
+  renderBackground: PropTypes.func,
+  overscan: PropTypes.shape({
+    x: PropTypes.number,
+    y: PropTypes.number,
+  }),
 };
 
 Diagram.defaultProps = {
   edges: [],
   enableZoom: false,
+  enableMinimap: true,
   renderBackground() {
     return null;
   },
   areVerticesDraggable: true,
   renderOverlays() {
     return null;
-  }
+  },
 };
 
 export default Diagram;
