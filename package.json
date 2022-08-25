@@ -51,7 +51,7 @@
     "transform": "babel ./src --out-dir ./lib --ignore 'src/**/*.spec.js','src/**/*.test.js','src/**/stories/**' $1",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "release": "rm -rf ./lib && npm run transform && sh ./scrips/release.sh"
+    "release": "rm -rf ./lib && npm run transform && sh ./scripts/release.sh"
   },
   "husky": {
     "hooks": {
