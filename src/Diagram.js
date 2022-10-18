@@ -367,6 +367,21 @@ class Diagram extends React.PureComponent {
       height: viewport.yMax - viewport.yMin,
     };
 
+    if (this.props.renderMinimap) {
+      return (
+        <React.Fragment>
+          {this.props.renderMinimap({
+            vertices: this.props.vertices,
+            extremeX: Math.max(extremeX, width),
+            extremeY: Math.max(extremeY, height),
+            viewport: minimapViewport,
+            zoom,
+            changeScrollHandler: this.scrollToPosition,
+          })}
+        </React.Fragment>
+      );
+    }
+
     return (
       <Minimap
         vertices={this.props.vertices}
