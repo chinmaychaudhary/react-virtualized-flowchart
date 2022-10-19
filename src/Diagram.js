@@ -472,6 +472,7 @@ Diagram.propTypes = {
     x: PropTypes.number,
     y: PropTypes.number,
   }),
+  renderMinimap: PropTypes.func,
 };
 
 Diagram.defaultProps = {
