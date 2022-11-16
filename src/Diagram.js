@@ -367,16 +367,20 @@ class Diagram extends React.PureComponent {
       height: viewport.yMax - viewport.yMin,
     };
 
-    return (
-      <Minimap
-        vertices={this.props.vertices}
-        extremeX={Math.max(extremeX, width)}
-        extremeY={Math.max(extremeY, height)}
-        viewport={minimapViewport}
-        zoom={zoom}
-        changeScrollHandler={this.scrollToPosition}
-      />
-    );
+    const minimapProps = {
+      vertices: this.props.vertices,
+      extremeX: Math.max(extremeX, width),
+      extremeY: Math.max(extremeY, height),
+      viewport: minimapViewport,
+      zoom,
+      changeScrollHandler: this.scrollToPosition,
+    };
+
+    if (this.props.renderMinimap) {
+      return <React.Fragment>{this.props.renderMinimap(minimapProps)}</React.Fragment>;
+    }
+
+    return <Minimap {...minimapProps} />;
   }
 
   renderChildren(extremeX, extremeY, zoom) {
@@ -457,6 +461,7 @@ Diagram.propTypes = {
     x: PropTypes.number,
     y: PropTypes.number,
   }),
+  renderMinimap: PropTypes.func,
 };
 
 Diagram.defaultProps = {
