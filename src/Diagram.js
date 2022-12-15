@@ -395,6 +395,7 @@ class Diagram extends React.PureComponent {
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}
         {this.props.enableMinimap ? this.renderMinimap(extremeX, extremeY, zoom) : null}
+        {this.props.children ? this.props.children({ zoom }) : null}
       </React.Fragment>
     );
   }
@@ -462,6 +463,7 @@ Diagram.propTypes = {
     y: PropTypes.number,
   }),
   renderMinimap: PropTypes.func,
+  children: PropTypes.func,
 };
 
 Diagram.defaultProps = {
