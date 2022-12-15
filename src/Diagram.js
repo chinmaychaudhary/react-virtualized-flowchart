@@ -207,7 +207,7 @@ class Diagram extends React.PureComponent {
       });
     });
     itemsAdded.forEach(vertex => {
-      const edges = verticesToEdgesMap.get(vertex.id);
+      const edges = verticesToEdgesMap.get(vertex.id) || [];
       const { verticesMap } = this;
       edges.forEach(edge => {
         this.addToXIntervalTree(edge, verticesMap);
