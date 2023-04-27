@@ -1,12 +1,12 @@
-import * as React from "react";
+import * as React from 'react';
 
-import PanAndZoomControls from "./PanAndZoomControls";
+import PanAndZoomControls from './PanAndZoomControls';
 
-import { usePanAndZoom } from "./hooks/usePanAndZoom";
+import { usePanAndZoom } from './hooks/usePanAndZoom';
 
 const STYLES = {
-  height: "100%",
-  width: "100%"
+  height: '100%',
+  width: '100%',
 };
 
 const PanAndZoomContainer = ({
@@ -15,7 +15,7 @@ const PanAndZoomContainer = ({
   containerRef,
   renderPanAndZoomControls,
   scroll,
-  contentSpan
+  contentSpan,
 }) => {
   const {
     zoom,
@@ -24,25 +24,26 @@ const PanAndZoomContainer = ({
     diagramContainerRef,
     incrementZoom,
     decrementZoom,
-    resetZoom
+    resetZoom,
   } = usePanAndZoom({ containerRef, scroll, contentSpan });
 
   return (
-    <div style={{ ...STYLES, position: "relative" }}>
+    <div style={{ ...STYLES, position: 'relative' }}>
       <div style={STYLES}>
         <div
-          style={{ ...STYLES, overflow: "auto" }}
+          style={{ ...STYLES, overflow: 'auto' }}
           onScroll={handleScroll}
           ref={combinedRef}
           {...panZoomHandlers}
           className="diagramContainer"
+          data-zoom={zoom}
         >
           <div
             ref={diagramContainerRef}
             style={{
               ...STYLES,
-              overflow: "visible",
-              position: "relative"
+              overflow: 'visible',
+              position: 'relative',
             }}
           >
             {children({ zoom })}
