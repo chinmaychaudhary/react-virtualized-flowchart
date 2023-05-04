@@ -425,6 +425,7 @@ class Diagram extends React.PureComponent {
           scroll={this.state.scroll}
           renderControlPanel={this.renderControlPanel}
           contentSpan={{ x: extremeX, y: extremeY }}
+          renderHeader={this.props.renderHeader}
         >
           {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
         </PanAndZoomContainer>

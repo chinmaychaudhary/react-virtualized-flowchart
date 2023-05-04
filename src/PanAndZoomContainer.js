@@ -7,7 +7,15 @@ const STYLES = {
   width: '100%',
 };
 
-const PanAndZoomContainer = ({ children, handleScroll, containerRef, scroll, contentSpan, renderControlPanel }) => {
+const PanAndZoomContainer = ({
+  children,
+  handleScroll,
+  containerRef,
+  scroll,
+  contentSpan,
+  renderControlPanel,
+  renderHeader,
+}) => {
   const {
     zoom,
     panZoomHandlers,
@@ -22,13 +30,14 @@ const PanAndZoomContainer = ({ children, handleScroll, containerRef, scroll, con
     <div style={{ ...STYLES, position: 'relative' }}>
       <div style={STYLES}>
         <div
-          style={{ ...STYLES, overflow: 'auto' }}
+          style={{ ...STYLES, display: 'flex', flexDirection: 'column', overflow: 'auto' }}
           onScroll={handleScroll}
           ref={combinedRef}
           {...panZoomHandlers}
           className="diagramContainer"
           data-zoom={zoom}
         >
+          {renderHeader ? renderHeader() : null}
           <div
             ref={diagramContainerRef}
             style={{
