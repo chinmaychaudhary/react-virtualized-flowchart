@@ -1,7 +1,5 @@
 import * as React from 'react';
 
-import PanAndZoomControls from './PanAndZoomControls';
-
 import { usePanAndZoom } from './hooks/usePanAndZoom';
 
 const STYLES = {
@@ -9,14 +7,7 @@ const STYLES = {
   width: '100%',
 };
 
-const PanAndZoomContainer = ({
-  children,
-  handleScroll,
-  containerRef,
-  renderPanAndZoomControls,
-  scroll,
-  contentSpan,
-}) => {
+const PanAndZoomContainer = ({ children, handleScroll, containerRef, scroll, contentSpan, renderControlPanel }) => {
   const {
     zoom,
     panZoomHandlers,
@@ -50,13 +41,12 @@ const PanAndZoomContainer = ({
           </div>
         </div>
       </div>
-      <PanAndZoomControls
-        zoom={zoom}
-        decrementZoom={decrementZoom}
-        incrementZoom={incrementZoom}
-        resetZoom={resetZoom}
-        renderPanAndZoomControls={renderPanAndZoomControls}
-      />
+      {renderControlPanel({
+        zoom,
+        incrementZoom,
+        decrementZoom,
+        resetZoom,
+      })}
     </div>
   );
 };
