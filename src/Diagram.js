@@ -6,6 +6,7 @@ import invariant from 'invariant';
 import Edges from './Edges';
 import PanAndZoomContainer from './PanAndZoomContainer';
 import Minimap from './minimap/Minimap';
+import PanAndZoomControls from './PanAndZoomControls';
 
 import IntervalTree from '@flatten-js/interval-tree';
 
@@ -383,6 +384,18 @@ class Diagram extends React.PureComponent {
     return <Minimap {...minimapProps} />;
   }
 
+  renderControlPanel = props => {
+    if (this.props.renderControlPanel) {
+      return this.props.renderControlPanel(props);
+    }
+
+    if (this.props.enableZoom) {
+      return <PanAndZoomControls {...props} />;
+    }
+
+    return null;
+  };
+
   renderChildren(extremeX, extremeY, zoom) {
     const verticesMap = this.getVisibleVertices(zoom);
     const edges = this.getVisibleEdges(zoom);
@@ -403,34 +416,18 @@ class Diagram extends React.PureComponent {
   render() {
     const [extremeX, extremeY] = this.getExtremeXAndY();
 
-    if (this.props.enableZoom) {
-      return (
-        <div style={{ position: 'relative', height: '100%' }}>
-          {this.props.enableMinimap ? this.renderMinimapRoot() : null}
-          <PanAndZoomContainer
-            handleScroll={this.handleScroll}
-            containerRef={this.containerRef}
-            renderPanAndZoomControls={this.props.renderPanAndZoomControls}
-            scroll={this.state.scroll}
-            contentSpan={{ x: extremeX, y: extremeY }}
-          >
-            {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
-          </PanAndZoomContainer>
-        </div>
-      );
-    }
-
     return (
       <div style={{ position: 'relative', height: '100%' }}>
         {this.props.enableMinimap ? this.renderMinimapRoot() : null}
-        <div
-          style={{ height: '100%', overflow: 'auto', position: 'relative' }}
-          ref={this.containerRef}
-          className="diagramContainer"
-          onScroll={this.handleScroll}
+        <PanAndZoomContainer
+          handleScroll={this.handleScroll}
+          containerRef={this.containerRef}
+          scroll={this.state.scroll}
+          renderControlPanel={this.renderControlPanel}
+          contentSpan={{ x: extremeX, y: extremeY }}
         >
-          {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
-        </div>
+          {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
+        </PanAndZoomContainer>
       </div>
     );
   }
@@ -464,6 +461,7 @@ Diagram.propTypes = {
   }),
   renderMinimap: PropTypes.func,
   children: PropTypes.func,
+  renderControlPanel: PropTypes.func,
 };
 
 Diagram.defaultProps = {
