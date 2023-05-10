@@ -28,6 +28,7 @@ import {
 } from './helper';
 
 import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from './constants';
+import { useZoomContext } from './zoomContext';
 class Diagram extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -396,7 +397,8 @@ class Diagram extends React.PureComponent {
     return null;
   };
 
-  renderChildren(extremeX, extremeY, zoom) {
+  renderChildren(extremeX, extremeY) {
+    const zoom = useZoomContext();
     const verticesMap = this.getVisibleVertices(zoom);
     const edges = this.getVisibleEdges(zoom);
     const vertices = [...verticesMap.values()];
@@ -408,7 +410,7 @@ class Diagram extends React.PureComponent {
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}
         {this.props.enableMinimap ? this.renderMinimap(extremeX, extremeY, zoom) : null}
-        {this.props.children ? this.props.children({ zoom }) : null}
+        {this.props.children ? this.props.children : null}
       </React.Fragment>
     );
   }

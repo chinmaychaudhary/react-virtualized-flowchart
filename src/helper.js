@@ -253,15 +253,3 @@ export const getContainerScroll = (scrollLeft, scrollTop, zoom, previousZoom, cl
 
 export const getResizeObserver = () =>
   typeof window !== 'undefined' ? window.ResizeObserver || ResizeObserverPolyfill : ResizeObserverPolyfill;
-
-export const scrollToNode = (leftOffset, topOffset) => {
-  const diagramContainer = document.getElementsByClassName('diagramContainer')?.[0];
-  const zoom = _isNaN(+diagramContainer?.dataset?.zoom) ? 1 : +diagramContainer.dataset.zoom;
-  if (diagramContainer) {
-    diagramContainer.scrollTo({
-      left: leftOffset * zoom - diagramContainer.clientWidth / 2,
-      top: topOffset * zoom - diagramContainer.clientHeight / 2,
-      behavior: 'smooth',
-    });
-  }
-};
