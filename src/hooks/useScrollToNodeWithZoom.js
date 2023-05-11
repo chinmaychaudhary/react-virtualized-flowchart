@@ -3,7 +3,7 @@ import { DEFAULT_ZOOM } from '../constants';
 import { useZoomContext } from '../zoomContext';
 
 export const useScrollToNodeWithZoom = () => {
-  const zoom = useZoomContext() ?? DEFAULT_ZOOM;
+  const { zoom = DEFAULT_ZOOM } = useZoomContext();
 
   const scrollToNode = useCallback(
     ({ leftOffset, topOffset, leftExtra = 0, topExtra = 0 }) => {

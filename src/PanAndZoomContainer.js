@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import { usePanAndZoom } from './hooks/usePanAndZoom';
-import { ZoomContext } from './zoomContext';
 
 const STYLES = {
   height: '100%',
@@ -28,37 +27,35 @@ const PanAndZoomContainer = ({
   } = usePanAndZoom({ containerRef, scroll, contentSpan });
 
   return (
-    <ZoomContext.Provider value={zoom}>
-      <div style={{ ...STYLES, position: 'relative' }}>
-        <div style={STYLES}>
+    <div style={{ ...STYLES, position: 'relative' }}>
+      <div style={STYLES}>
+        <div
+          style={{ ...STYLES, display: 'flex', flexDirection: 'column', overflow: 'auto' }}
+          onScroll={handleScroll}
+          ref={combinedRef}
+          {...panZoomHandlers}
+          className="diagramContainer"
+        >
+          {renderHeader ? renderHeader() : null}
           <div
-            style={{ ...STYLES, display: 'flex', flexDirection: 'column', overflow: 'auto' }}
-            onScroll={handleScroll}
-            ref={combinedRef}
-            {...panZoomHandlers}
-            className="diagramContainer"
+            ref={diagramContainerRef}
+            style={{
+              ...STYLES,
+              overflow: 'visible',
+              position: 'relative',
+            }}
           >
-            {renderHeader ? renderHeader() : null}
-            <div
-              ref={diagramContainerRef}
-              style={{
-                ...STYLES,
-                overflow: 'visible',
-                position: 'relative',
-              }}
-            >
-              {children({ zoom })}
-            </div>
+            {children()}
           </div>
         </div>
-        {renderControlPanel({
-          zoom,
-          incrementZoom,
-          decrementZoom,
-          resetZoom,
-        })}
       </div>
-    </ZoomContext.Provider>
+      {renderControlPanel({
+        zoom,
+        incrementZoom,
+        decrementZoom,
+        resetZoom,
+      })}
+    </div>
   );
 };
 

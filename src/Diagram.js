@@ -28,7 +28,7 @@ import {
 } from './helper';
 
 import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from './constants';
-import { useZoomContext } from './zoomContext';
+import { useZoomContext, ZoomContextProvider } from './zoomContext';
 class Diagram extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -398,7 +398,7 @@ class Diagram extends React.PureComponent {
   };
 
   renderChildren(extremeX, extremeY) {
-    const zoom = useZoomContext();
+    const { zoom } = useZoomContext();
     const verticesMap = this.getVisibleVertices(zoom);
     const edges = this.getVisibleEdges(zoom);
     const vertices = [...verticesMap.values()];
@@ -419,19 +419,21 @@ class Diagram extends React.PureComponent {
     const [extremeX, extremeY] = this.getExtremeXAndY();
 
     return (
-      <div style={{ position: 'relative', height: '100%' }}>
-        {this.props.enableMinimap ? this.renderMinimapRoot() : null}
-        <PanAndZoomContainer
-          handleScroll={this.handleScroll}
-          containerRef={this.containerRef}
-          scroll={this.state.scroll}
-          renderControlPanel={this.renderControlPanel}
-          contentSpan={{ x: extremeX, y: extremeY }}
-          renderHeader={this.props.renderHeader}
-        >
-          {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
-        </PanAndZoomContainer>
-      </div>
+      <ZoomContextProvider>
+        <div style={{ position: 'relative', height: '100%' }}>
+          {this.props.enableMinimap ? this.renderMinimapRoot() : null}
+          <PanAndZoomContainer
+            handleScroll={this.handleScroll}
+            containerRef={this.containerRef}
+            scroll={this.state.scroll}
+            renderControlPanel={this.renderControlPanel}
+            contentSpan={{ x: extremeX, y: extremeY }}
+            renderHeader={this.props.renderHeader}
+          >
+            {() => this.renderChildren(extremeX, extremeY)}
+          </PanAndZoomContainer>
+        </div>
+      </ZoomContextProvider>
     );
   }
 }

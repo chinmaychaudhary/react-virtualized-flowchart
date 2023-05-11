@@ -1,15 +1,10 @@
-import { useEffect, useRef, useCallback } from "react";
-import usePanZoom from "use-pan-and-zoom";
+import { useEffect, useRef, useCallback } from 'react';
+import usePanZoom from 'use-pan-and-zoom';
+import { useZoomContext } from '../zoomContext';
 
-import {
-  MIN_ZOOM,
-  MAX_ZOOM,
-  STEP_SIZE,
-  CENTER,
-  DEFAULT_ZOOM
-} from "../constants";
+import { MIN_ZOOM, MAX_ZOOM, STEP_SIZE, CENTER, DEFAULT_ZOOM } from '../constants';
 
-import { getTranslate3DCoordinates, getContainerScroll } from "../helper";
+import { getTranslate3DCoordinates, getContainerScroll } from '../helper';
 
 const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
   const previousZoom = useRef(DEFAULT_ZOOM);
@@ -18,8 +13,10 @@ const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
     enablePan: false,
     disableWheel: true,
     minZoom: MIN_ZOOM,
-    maxZoom: MAX_ZOOM
+    maxZoom: MAX_ZOOM,
   });
+
+  const { setZoomContext } = useZoomContext();
 
   const incrementZoom = useCallback(() => {
     const incrementedZoom = zoom + STEP_SIZE;
@@ -44,16 +41,16 @@ const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
   );
 
   useEffect(() => {
+    if (setZoomContext) {
+      setZoomContext(zoom);
+    }
+  }, [zoom]);
+
+  useEffect(() => {
     const container = containerRef.current;
     const { clientWidth, clientHeight } = container;
 
-    const { translateX, translateY } = getTranslate3DCoordinates(
-      clientWidth,
-      clientHeight,
-      pan,
-      zoom,
-      contentSpan
-    );
+    const { translateX, translateY } = getTranslate3DCoordinates(clientWidth, clientHeight, pan, zoom, contentSpan);
 
     diagramContainerRef.current.style.transform = `translate3D(${translateX}px, ${translateY}px, 0) scale(${zoom})`;
 
@@ -84,7 +81,7 @@ const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
     diagramContainerRef,
     incrementZoom,
     decrementZoom,
-    resetZoom
+    resetZoom,
   };
 };
 

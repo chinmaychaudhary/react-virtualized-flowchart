@@ -7,4 +7,12 @@ ZoomContext.displayName = 'ZoomContext';
 
 const useZoomContext = () => React.useContext(ZoomContext);
 
-export { useZoomContext, ZoomContext };
+const ZoomContextProvider = ({ children }) => {
+  const [zoom, setZoomContext] = React.useState(DEFAULT_ZOOM);
+
+  const contextValue = React.useMemo(() => ({ zoom, setZoomContext }), [zoom]);
+
+  return <ZoomContext.Provider value={contextValue}>{children}</ZoomContext.Provider>;
+};
+
+export { useZoomContext, ZoomContextProvider };
