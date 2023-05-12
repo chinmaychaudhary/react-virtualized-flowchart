@@ -250,9 +250,9 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  scrollToPosition = pos => {
+  scrollToPosition = zoom => pos => {
     this.updateScroll(pos);
-    this.containerRef.current.scrollTo(pos.scrollLeft, pos.scrollTop);
+    this.containerRef.current.scrollTo(pos.scrollLeft * zoom, pos.scrollTop * zoom);
   };
 
   getVisibleEdges(zoom) {
@@ -317,9 +317,9 @@ class Diagram extends React.PureComponent {
     return this.props.renderBackground(x, y);
   }
 
-  renderVertices(vertices, zoom) {
+  renderVertices(vertices) {
     return vertices.map(({ vertex, index }) => (
-      <React.Fragment key={vertex.id}>{this.props.renderVertex({ vertex, index, zoom })}</React.Fragment>
+      <React.Fragment key={vertex.id}>{this.props.renderVertex({ vertex, index })}</React.Fragment>
     ));
   }
 
@@ -375,7 +375,7 @@ class Diagram extends React.PureComponent {
       extremeY: Math.max(extremeY, height),
       viewport: minimapViewport,
       zoom,
-      changeScrollHandler: this.scrollToPosition,
+      changeScrollHandler: this.scrollToPosition(zoom),
     };
 
     if (this.props.renderMinimap) {
@@ -405,7 +405,7 @@ class Diagram extends React.PureComponent {
 
     return (
       <React.Fragment>
-        {this.renderVertices(vertices, zoom)}
+        {this.renderVertices(vertices)}
         {this.renderEdges(edges, vertices)}
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}

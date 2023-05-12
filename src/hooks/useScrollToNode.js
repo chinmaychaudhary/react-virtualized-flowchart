@@ -2,16 +2,16 @@ import { useCallback } from 'react';
 import { DEFAULT_ZOOM } from '../constants';
 import { useZoomContext } from '../zoomContext';
 
-export const useScrollToNodeWithZoom = () => {
+export const useScrollToNode = () => {
   const { zoom = DEFAULT_ZOOM } = useZoomContext();
 
   const scrollToNode = useCallback(
-    ({ leftOffset, topOffset, leftExtra = 0, topExtra = 0 }) => {
+    ({ position, offset }) => {
       const diagramContainer = document.getElementsByClassName('diagramContainer')?.[0];
       if (diagramContainer) {
         diagramContainer.scrollTo({
-          left: leftOffset * zoom - diagramContainer.clientWidth / 2 + leftExtra,
-          top: topOffset * zoom - diagramContainer.clientHeight / 2 + topExtra,
+          left: position.left * zoom - diagramContainer.clientWidth / 2 + offset.left,
+          top: position.top * zoom - diagramContainer.clientHeight / 2 + offset.top,
           behavior: 'smooth',
         });
       }
