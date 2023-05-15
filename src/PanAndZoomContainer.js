@@ -11,6 +11,7 @@ const PanAndZoomContainer = ({
   children,
   handleScroll,
   containerRef,
+  diagramContainerStyles,
   scroll,
   contentSpan,
   renderControlPanel,
@@ -30,7 +31,7 @@ const PanAndZoomContainer = ({
     <div style={{ ...STYLES, position: 'relative' }}>
       <div style={STYLES}>
         <div
-          style={{ ...STYLES, display: 'flex', flexDirection: 'column', overflow: 'auto' }}
+          style={{ ...STYLES, display: 'flex', flexDirection: 'column', overflow: 'auto', ...diagramContainerStyles }}
           onScroll={handleScroll}
           ref={combinedRef}
           {...panZoomHandlers}
