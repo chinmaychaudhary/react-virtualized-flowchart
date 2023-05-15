@@ -250,9 +250,10 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  scrollToPosition = zoom => pos => {
-    this.updateScroll(pos);
-    this.containerRef.current.scrollTo(pos.scrollLeft * zoom, pos.scrollTop * zoom);
+  scrollToPosition = zoom => position => {
+    const zoomedPosition = { scrollLeft: position.scrollLeft * zoom, scrollTop: position.scrollTop * zoom };
+    this.updateScroll(zoomedPosition);
+    this.containerRef.current.scrollTo(zoomedPosition.scrollLeft, zoomedPosition.scrollTop);
   };
 
   getVisibleEdges(zoom) {
@@ -374,7 +375,6 @@ class Diagram extends React.PureComponent {
       extremeX: Math.max(extremeX, width),
       extremeY: Math.max(extremeY, height),
       viewport: minimapViewport,
-      zoom,
       changeScrollHandler: this.scrollToPosition(zoom),
     };
 
