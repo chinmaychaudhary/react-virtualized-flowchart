@@ -1,12 +1,12 @@
 import { useEffect, useRef, useCallback } from 'react';
 import usePanZoom from 'use-pan-and-zoom';
-import { useZoomContext } from '../zoomContext';
+import { useDiagramContext } from '../diagramContext';
 
 import { MIN_ZOOM, MAX_ZOOM, STEP_SIZE, CENTER, DEFAULT_ZOOM } from '../constants';
 
 import { getTranslate3DCoordinates, getContainerScroll } from '../helper';
 
-const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
+const usePanAndZoom = ({ scroll, contentSpan }) => {
   const previousZoom = useRef(DEFAULT_ZOOM);
   const diagramContainerRef = useRef();
   const { panZoomHandlers, setContainer, zoom, pan, setZoom } = usePanZoom({
@@ -16,7 +16,7 @@ const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
     maxZoom: MAX_ZOOM,
   });
 
-  const { setZoomContext } = useZoomContext();
+  const { setZoom: setDiagramZoom, containerRef } = useDiagramContext();
 
   const incrementZoom = useCallback(() => {
     const incrementedZoom = zoom + STEP_SIZE;
@@ -41,8 +41,8 @@ const usePanAndZoom = ({ containerRef, scroll, contentSpan }) => {
   );
 
   useEffect(() => {
-    if (setZoomContext) {
-      setZoomContext(zoom);
+    if (setDiagramZoom) {
+      setDiagramZoom(zoom);
     }
   }, [zoom]);
 

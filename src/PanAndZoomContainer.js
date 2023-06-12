@@ -10,7 +10,6 @@ const STYLES = {
 const PanAndZoomContainer = ({
   children,
   handleScroll,
-  containerRef,
   diagramContainerStyles,
   scroll,
   contentSpan,
@@ -25,7 +24,7 @@ const PanAndZoomContainer = ({
     incrementZoom,
     decrementZoom,
     resetZoom,
-  } = usePanAndZoom({ containerRef, scroll, contentSpan });
+  } = usePanAndZoom({ scroll, contentSpan });
 
   return (
     <div style={{ ...STYLES, position: 'relative' }}>
