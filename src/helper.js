@@ -1,6 +1,7 @@
-import _map from "lodash/map";
-import memoizeOne from "memoize-one";
-import ResizeObserverPolyfill from "resize-observer-polyfill";
+import _map from 'lodash/map';
+import _isNaN from 'lodash/isNaN';
+import memoizeOne from 'memoize-one';
+import ResizeObserverPolyfill from 'resize-observer-polyfill';
 
 export function getAddedOrRemovedItems(prevItems, nextItems) {
   const prevMap = new Map(prevItems.map(i => [i.id, i]));
@@ -27,7 +28,7 @@ export function getAddedOrRemovedItems(prevItems, nextItems) {
   return {
     itemsAdded,
     itemsRemoved,
-    itemsUpdated
+    itemsUpdated,
   };
 }
 
@@ -40,16 +41,16 @@ export function getOverlays(edge) {
   const customOverlays = _map(edge.customOverlays, customOverlay => {
     const { id, location } = customOverlay;
     return [
-      "Custom",
+      'Custom',
       {
         create: () => {
-          const overlayDiv = document.createElement("div");
-          overlayDiv.setAttribute("id", getOverlayId(edge, customOverlay));
+          const overlayDiv = document.createElement('div');
+          overlayDiv.setAttribute('id', getOverlayId(edge, customOverlay));
           return overlayDiv;
         },
         location,
-        id
-      }
+        id,
+      },
     ];
   });
 
@@ -79,7 +80,7 @@ export const getExtremeVertices = memoizeOne(vertices => {
     },
     {
       rightMostVertex: { left: -1, width: 0 },
-      bottomMostVertex: { top: -1, height: 0 }
+      bottomMostVertex: { top: -1, height: 0 },
     }
   );
 });
@@ -88,40 +89,30 @@ export function getVerticesMap(vertices) {
   return new Map(vertices.map((v, index) => [v.id, { vertex: v, index }]));
 }
 
-export const getVisibleVertices = memoizeOne(
-  (universalVerticesMap, visibleEdgesMap, version) => {
-    const visibleVertices = new Map();
-    visibleEdgesMap.forEach(edge => {
-      visibleVertices.set(
-        edge.sourceId,
-        universalVerticesMap.get(edge.sourceId)
-      );
-      visibleVertices.set(
-        edge.targetId,
-        universalVerticesMap.get(edge.targetId)
-      );
-    });
+export const getVisibleVertices = memoizeOne((universalVerticesMap, visibleEdgesMap, version) => {
+  const visibleVertices = new Map();
+  visibleEdgesMap.forEach(edge => {
+    visibleVertices.set(edge.sourceId, universalVerticesMap.get(edge.sourceId));
+    visibleVertices.set(edge.targetId, universalVerticesMap.get(edge.targetId));
+  });
 
-    return visibleVertices;
-  }
-);
+  return visibleVertices;
+});
 
-export const getVisibleEdges = memoizeOne(
-  (viewport, xIntervalTree, yIntervalTree, treeNodeById, version) => {
-    const yEdgesSet = new Set();
-    const visibleEdges = new Map();
-    yIntervalTree.search([viewport.yMin, viewport.yMax], edgeId => {
-      yEdgesSet.add(edgeId);
-    });
-    xIntervalTree.search([viewport.xMin, viewport.xMax], edgeId => {
-      if (yEdgesSet.has(edgeId)) {
-        visibleEdges.set(edgeId, treeNodeById[edgeId].edge);
-      }
-    });
+export const getVisibleEdges = memoizeOne((viewport, xIntervalTree, yIntervalTree, treeNodeById, version) => {
+  const yEdgesSet = new Set();
+  const visibleEdges = new Map();
+  yIntervalTree.search([viewport.yMin, viewport.yMax], edgeId => {
+    yEdgesSet.add(edgeId);
+  });
+  xIntervalTree.search([viewport.xMin, viewport.xMax], edgeId => {
+    if (yEdgesSet.has(edgeId)) {
+      visibleEdges.set(edgeId, treeNodeById[edgeId].edge);
+    }
+  });
 
-    return visibleEdges;
-  }
-);
+  return visibleEdges;
+});
 
 export function addEdge(vToEMap, edge, vertexId) {
   let sourceVertexEdgeList = vToEMap.get(vertexId);
@@ -135,9 +126,7 @@ export function addEdge(vToEMap, edge, vertexId) {
 export function removeEdge(vToEMap, edgeId, vertexId) {
   let sourceVertexEdgeList = vToEMap.get(vertexId);
   if (sourceVertexEdgeList) {
-    sourceVertexEdgeList = sourceVertexEdgeList.filter(
-      presentEdge => presentEdge.id !== edgeId
-    );
+    sourceVertexEdgeList = sourceVertexEdgeList.filter(presentEdge => presentEdge.id !== edgeId);
   }
   if (!sourceVertexEdgeList || !sourceVertexEdgeList.length) {
     vToEMap.delete(vertexId);
@@ -146,23 +135,21 @@ export function removeEdge(vToEMap, edgeId, vertexId) {
   }
 }
 
-export const getViewport = memoizeOne(
-  (scrollLeft, scrollTop, clientWidth, clientHeight, zoom) => {
-    const scale = 1 / zoom;
+export const getViewport = memoizeOne((scrollLeft, scrollTop, clientWidth, clientHeight, zoom) => {
+  const scale = 1 / zoom;
 
-    const scrollLeftScaled = scrollLeft * scale;
-    const clientWidthScaled = clientWidth * scale;
-    const scrollTopScaled = scrollTop * scale;
-    const clientHeightScaled = clientHeight * scale;
+  const scrollLeftScaled = scrollLeft * scale;
+  const clientWidthScaled = clientWidth * scale;
+  const scrollTopScaled = scrollTop * scale;
+  const clientHeightScaled = clientHeight * scale;
 
-    return {
-      xMin: scrollLeftScaled,
-      xMax: scrollLeftScaled + clientWidthScaled,
-      yMin: scrollTopScaled,
-      yMax: scrollTopScaled + clientHeightScaled
-    };
-  }
-);
+  return {
+    xMin: scrollLeftScaled,
+    xMax: scrollLeftScaled + clientWidthScaled,
+    yMin: scrollTopScaled,
+    yMax: scrollTopScaled + clientHeightScaled,
+  };
+});
 
 export function removeNode(xIntervalTree, yIntervalTree, treeNodeById, nodeId) {
   const treeNode = treeNodeById[nodeId];
@@ -179,19 +166,13 @@ export function removeNode(xIntervalTree, yIntervalTree, treeNodeById, nodeId) {
 
 export function makeXIntervalForEdge(edge, v1, v2) {
   const x1 = Math.min(v1.left, v2.left) || 0;
-  const x2 = Math.max(
-    (v1.left || 0) + (v1.width || 0),
-    (v2.left || 0) + (v2.width || 0)
-  );
+  const x2 = Math.max((v1.left || 0) + (v1.width || 0), (v2.left || 0) + (v2.width || 0));
   return [x1, x2];
 }
 
 export function makeYIntervalForEdge(edge, v1, v2) {
   const y1 = Math.min(v1.top, v2.top) || 0;
-  const y2 = Math.max(
-    (v1.top || 0) + (v1.height || 0),
-    (v2.top || 0) + (v2.height || 0)
-  );
+  const y2 = Math.max((v1.top || 0) + (v1.height || 0), (v2.top || 0) + (v2.height || 0));
   return [y1, y2];
 }
 
@@ -204,13 +185,7 @@ export function makeYIntervalForEdge(edge, v1, v2) {
  * Else, Just use origin shift as per use-pan-and-zoom library
  */
 
-export const getTranslate3DCoordinates = (
-  clientWidth,
-  clientHeight,
-  pan,
-  zoom,
-  contentSpan
-) => {
+export const getTranslate3DCoordinates = (clientWidth, clientHeight, pan, zoom, contentSpan) => {
   let translateX = pan.x,
     translateY = pan.y;
 
@@ -226,7 +201,7 @@ export const getTranslate3DCoordinates = (
 
   return {
     translateX,
-    translateY
+    translateY,
   };
 };
 
@@ -235,21 +210,16 @@ const getScaledScrollValues = (scrollLeft, scrollTop, zoom, previousZoom) => {
 
   return {
     scrollLeft: scrollLeft * scale,
-    scrollTop: scrollTop * scale
+    scrollTop: scrollTop * scale,
   };
 };
 
-const getScaledViewportDimensions = (
-  clientWidth,
-  clientHeight,
-  zoom,
-  previousZoom
-) => {
+const getScaledViewportDimensions = (clientWidth, clientHeight, zoom, previousZoom) => {
   const scale = (zoom - previousZoom) / (2 * previousZoom);
 
   return {
     clientWidth: clientWidth * scale,
-    clientHeight: clientHeight * scale
+    clientHeight: clientHeight * scale,
   };
 };
 
@@ -262,22 +232,14 @@ const getScaledViewportDimensions = (
  * content exposed/removed signifies the part of content which is visible/hidden on inc/dec zoom to accommodate the fixed browser viewport
  */
 
-export const getContainerScroll = (
-  scrollLeft,
-  scrollTop,
-  zoom,
-  previousZoom,
-  clientWidth,
-  clientHeight
-) => {
-  const {
-    scrollLeft: scrollLeftScaled,
-    scrollTop: scrollTopScaled
-  } = getScaledScrollValues(scrollLeft, scrollTop, zoom, previousZoom);
-  const {
-    clientWidth: clientWidthScaled,
-    clientHeight: clientHeightScaled
-  } = getScaledViewportDimensions(
+export const getContainerScroll = (scrollLeft, scrollTop, zoom, previousZoom, clientWidth, clientHeight) => {
+  const { scrollLeft: scrollLeftScaled, scrollTop: scrollTopScaled } = getScaledScrollValues(
+    scrollLeft,
+    scrollTop,
+    zoom,
+    previousZoom
+  );
+  const { clientWidth: clientWidthScaled, clientHeight: clientHeightScaled } = getScaledViewportDimensions(
     clientWidth,
     clientHeight,
     zoom,
@@ -285,11 +247,9 @@ export const getContainerScroll = (
   );
   return {
     scrollLeft: scrollLeftScaled + clientWidthScaled,
-    scrollTop: scrollTopScaled + (scrollTop ? clientHeightScaled : 0)
+    scrollTop: scrollTopScaled + (scrollTop ? clientHeightScaled : 0),
   };
 };
 
 export const getResizeObserver = () =>
-  typeof window !== "undefined"
-    ? window.ResizeObserver || ResizeObserverPolyfill
-    : ResizeObserverPolyfill;
+  typeof window !== 'undefined' ? window.ResizeObserver || ResizeObserverPolyfill : ResizeObserverPolyfill;

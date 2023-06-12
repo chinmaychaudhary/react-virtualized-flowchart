@@ -1,21 +1,20 @@
-import * as React from "react";
+import * as React from 'react';
 
-import PanAndZoomControls from "./PanAndZoomControls";
-
-import { usePanAndZoom } from "./hooks/usePanAndZoom";
+import { usePanAndZoom } from './hooks/usePanAndZoom';
 
 const STYLES = {
-  height: "100%",
-  width: "100%"
+  height: '100%',
+  width: '100%',
 };
 
 const PanAndZoomContainer = ({
   children,
   handleScroll,
-  containerRef,
-  renderPanAndZoomControls,
+  diagramContainerStyles,
   scroll,
-  contentSpan
+  contentSpan,
+  renderControlPanel,
+  renderHeader,
 }) => {
   const {
     zoom,
@@ -24,38 +23,38 @@ const PanAndZoomContainer = ({
     diagramContainerRef,
     incrementZoom,
     decrementZoom,
-    resetZoom
-  } = usePanAndZoom({ containerRef, scroll, contentSpan });
+    resetZoom,
+  } = usePanAndZoom({ scroll, contentSpan });
 
   return (
-    <div style={{ ...STYLES, position: "relative" }}>
+    <div style={{ ...STYLES, position: 'relative' }}>
       <div style={STYLES}>
         <div
-          style={{ ...STYLES, overflow: "auto" }}
+          style={{ ...STYLES, display: 'flex', flexDirection: 'column', overflow: 'auto', ...diagramContainerStyles }}
           onScroll={handleScroll}
           ref={combinedRef}
           {...panZoomHandlers}
           className="diagramContainer"
         >
+          {renderHeader ? renderHeader() : null}
           <div
             ref={diagramContainerRef}
             style={{
               ...STYLES,
-              overflow: "visible",
-              position: "relative"
+              overflow: 'visible',
+              position: 'relative',
             }}
           >
-            {children({ zoom })}
+            {children()}
           </div>
         </div>
       </div>
-      <PanAndZoomControls
-        zoom={zoom}
-        decrementZoom={decrementZoom}
-        incrementZoom={incrementZoom}
-        resetZoom={resetZoom}
-        renderPanAndZoomControls={renderPanAndZoomControls}
-      />
+      {renderControlPanel({
+        zoom,
+        incrementZoom,
+        decrementZoom,
+        resetZoom,
+      })}
     </div>
   );
 };

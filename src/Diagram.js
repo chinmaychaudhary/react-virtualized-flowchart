@@ -6,6 +6,7 @@ import invariant from 'invariant';
 import Edges from './Edges';
 import PanAndZoomContainer from './PanAndZoomContainer';
 import Minimap from './minimap/Minimap';
+import PanAndZoomControls from './PanAndZoomControls';
 
 import IntervalTree from '@flatten-js/interval-tree';
 
@@ -27,6 +28,7 @@ import {
 } from './helper';
 
 import { MARGIN, DEFAULT_CONTAINER_RECT, DEFAULT_ZOOM } from './constants';
+import { DiagramContextProvider } from './diagramContext';
 class Diagram extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -41,6 +43,7 @@ class Diagram extends React.PureComponent {
       },
       version: 0,
       isContainerElReady: false,
+      zoom: DEFAULT_ZOOM,
     };
     this.containerRef = React.createRef();
     const { verticesMap } = this.setVertices(props.vertices);
@@ -58,6 +61,7 @@ class Diagram extends React.PureComponent {
         width,
       },
       isContainerElReady: true,
+      zoom: DEFAULT_ZOOM,
     });
 
     const ResizeObserver = getResizeObserver();
@@ -248,17 +252,23 @@ class Diagram extends React.PureComponent {
     this.updateScroll(e.currentTarget);
   };
 
-  scrollToPosition = pos => {
-    this.updateScroll(pos);
-    this.containerRef.current.scrollTo(pos.scrollLeft, pos.scrollTop);
+  setZoom = newZoom => this.setState(prevState => ({ ...prevState, zoom: newZoom }));
+
+  scrollToPosition = position => {
+    const zoomedPosition = {
+      scrollLeft: position.scrollLeft * this.state.zoom,
+      scrollTop: position.scrollTop * this.state.zoom,
+    };
+    this.updateScroll(zoomedPosition);
+    this.containerRef.current.scrollTo(zoomedPosition.scrollLeft, zoomedPosition.scrollTop);
   };
 
-  getVisibleEdges(zoom) {
+  getVisibleEdges() {
     const { scroll, version } = this.state;
     const { width, height } = this.containerRef.current
       ? this.containerRef.current.getBoundingClientRect()
       : DEFAULT_CONTAINER_RECT;
-    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+    const viewport = getViewport(scroll.left, scroll.top, width, height, this.state.zoom);
     const xOverscan = this.props.overscan?.x ?? width;
     const yOverscan = this.props.overscan?.y ?? height;
     const viewportWithOverscanning = {
@@ -277,10 +287,10 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  getVisibleVertices(zoom) {
+  getVisibleVertices() {
     const { version } = this.state;
 
-    return getVisibleVertices(this.verticesMap, this.getVisibleEdges(zoom), version);
+    return getVisibleVertices(this.verticesMap, this.getVisibleEdges(), version);
   }
 
   getExtremeXAndY() {
@@ -315,9 +325,9 @@ class Diagram extends React.PureComponent {
     return this.props.renderBackground(x, y);
   }
 
-  renderVertices(vertices, zoom) {
+  renderVertices(vertices) {
     return vertices.map(({ vertex, index }) => (
-      <React.Fragment key={vertex.id}>{this.props.renderVertex({ vertex, index, zoom })}</React.Fragment>
+      <React.Fragment key={vertex.id}>{this.props.renderVertex({ vertex, index })}</React.Fragment>
     ));
   }
 
@@ -355,10 +365,10 @@ class Diagram extends React.PureComponent {
     );
   }
 
-  renderMinimap(extremeX, extremeY, zoom) {
+  renderMinimap(extremeX, extremeY) {
     const { scroll } = this.state;
     const { width, height } = this.state.container;
-    const viewport = getViewport(scroll.left, scroll.top, width, height, zoom);
+    const viewport = getViewport(scroll.left, scroll.top, width, height, this.state.zoom);
 
     const minimapViewport = {
       top: viewport.yMin,
@@ -372,7 +382,6 @@ class Diagram extends React.PureComponent {
       extremeX: Math.max(extremeX, width),
       extremeY: Math.max(extremeY, height),
       viewport: minimapViewport,
-      zoom,
       changeScrollHandler: this.scrollToPosition,
     };
 
@@ -383,19 +392,31 @@ class Diagram extends React.PureComponent {
     return <Minimap {...minimapProps} />;
   }
 
-  renderChildren(extremeX, extremeY, zoom) {
-    const verticesMap = this.getVisibleVertices(zoom);
-    const edges = this.getVisibleEdges(zoom);
+  renderControlPanel = props => {
+    if (this.props.renderControlPanel) {
+      return this.props.renderControlPanel(props);
+    }
+
+    if (this.props.enableZoom) {
+      return <PanAndZoomControls {...props} />;
+    }
+
+    return null;
+  };
+
+  renderChildren(extremeX, extremeY) {
+    const verticesMap = this.getVisibleVertices();
+    const edges = this.getVisibleEdges();
     const vertices = [...verticesMap.values()];
 
     return (
       <React.Fragment>
-        {this.renderVertices(vertices, zoom)}
+        {this.renderVertices(vertices)}
         {this.renderEdges(edges, vertices)}
         {this.renderSentinel(extremeX, extremeY)}
         {this.renderBackground(extremeX, extremeY)}
-        {this.props.enableMinimap ? this.renderMinimap(extremeX, extremeY, zoom) : null}
-        {this.props.children ? this.props.children({ zoom }) : null}
+        {this.props.enableMinimap ? this.renderMinimap(extremeX, extremeY) : null}
+        {this.props.children ? this.props.children : null}
       </React.Fragment>
     );
   }
@@ -403,35 +424,22 @@ class Diagram extends React.PureComponent {
   render() {
     const [extremeX, extremeY] = this.getExtremeXAndY();
 
-    if (this.props.enableZoom) {
-      return (
+    return (
+      <DiagramContextProvider zoom={this.state.zoom} setZoom={this.setZoom} containerRef={this.containerRef}>
         <div style={{ position: 'relative', height: '100%' }}>
           {this.props.enableMinimap ? this.renderMinimapRoot() : null}
           <PanAndZoomContainer
             handleScroll={this.handleScroll}
-            containerRef={this.containerRef}
-            renderPanAndZoomControls={this.props.renderPanAndZoomControls}
+            diagramContainerStyles={this.props.diagramContainerStyles}
             scroll={this.state.scroll}
+            renderControlPanel={this.renderControlPanel}
             contentSpan={{ x: extremeX, y: extremeY }}
+            renderHeader={this.props.renderHeader}
           >
-            {({ zoom }) => this.renderChildren(extremeX, extremeY, zoom)}
+            {() => this.renderChildren(extremeX, extremeY)}
           </PanAndZoomContainer>
         </div>
-      );
-    }
-
-    return (
-      <div style={{ position: 'relative', height: '100%' }}>
-        {this.props.enableMinimap ? this.renderMinimapRoot() : null}
-        <div
-          style={{ height: '100%', overflow: 'auto', position: 'relative' }}
-          ref={this.containerRef}
-          className="diagramContainer"
-          onScroll={this.handleScroll}
-        >
-          {this.renderChildren(extremeX, extremeY, DEFAULT_ZOOM)}
-        </div>
-      </div>
+      </DiagramContextProvider>
     );
   }
 }
@@ -464,6 +472,7 @@ Diagram.propTypes = {
   }),
   renderMinimap: PropTypes.func,
   children: PropTypes.func,
+  renderControlPanel: PropTypes.func,
 };
 
 Diagram.defaultProps = {
